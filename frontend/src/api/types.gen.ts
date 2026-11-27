@@ -36,6 +36,22 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	"/events/{shortId}/confirm": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		post: operations["confirmEvent"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 	"/auth/google": {
 		parameters: {
 			query?: never;
@@ -151,6 +167,15 @@ export interface components {
 			timezone?: string;
 			/** Format: int32 */
 			respondedCount?: number;
+			/** Format: date-time */
+			confirmedAt?: string;
+			/** Format: date-time */
+			confirmedStart?: string;
+			/** Format: date-time */
+			confirmedEnd?: string;
+		};
+		ConfirmEventDto: {
+			slot: string;
 		};
 		AuthRequestDto: {
 			idToken?: string;
@@ -180,6 +205,10 @@ export interface components {
 			timeFormat24?: boolean;
 			language?: string;
 		};
+		UpdateEventDto: {
+			name?: string;
+			description?: string;
+		};
 		EventSummaryDto: {
 			users?: components["schemas"]["EventUserDto"][];
 			slots?: components["schemas"]["SlotSummaryDto"][];
@@ -205,10 +234,6 @@ export interface components {
 			id?: number;
 			name?: string;
 			profilePicture?: string;
-		};
-		UpdateEventDto: {
-			name?: string;
-			description?: string;
 		};
 	};
 	responses: never;
@@ -273,6 +298,32 @@ export interface operations {
 		requestBody: {
 			content: {
 				"application/json": components["schemas"]["CreateEventDto"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"*/*": components["schemas"]["EventResponseDto"];
+				};
+			};
+		};
+	};
+	confirmEvent: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				shortId: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["ConfirmEventDto"];
 			};
 		};
 		responses: {

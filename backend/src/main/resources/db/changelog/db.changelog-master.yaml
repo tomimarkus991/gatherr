@@ -241,3 +241,21 @@ databaseChangeLog:
               - column:
                   name: timezone
                   type: VARCHAR(255)
+
+  # 7. ADD CONFIRMED TIME TO EVENTS
+  - changeSet:
+      id: 007-add-confirmed-time-to-events
+      author: gatherr
+      changes:
+        - addColumn:
+            tableName: events
+            columns:
+              - column:
+                  name: confirmed_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: confirmed_start
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: confirmed_end
+                  type: TIMESTAMP WITH TIME ZONE
