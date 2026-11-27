@@ -2,10 +2,7 @@ name: Deploy Backend
 
 on:
   push:
-    branches: [main]
-    paths:
-      - "backend/**"
-      - "docker-compose.prod.yml"
+    tags: ["v*"]
   workflow_dispatch:
 
 jobs:
@@ -31,6 +28,7 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/gatherr-backend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/gatherr-backend:${{ github.sha }}
+            ${{ github.ref_type == 'tag' && format('{0}/gatherr-backend:{1}', secrets.DOCKERHUB_USERNAME, github.ref_name) || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
