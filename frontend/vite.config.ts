@@ -1,9 +1,11 @@
+/// <reference types="vitest/config" />
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import tailwindcss from "@tailwindcss/vite";
 import { devtools } from "@tanstack/devtools-vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
+import { configDefaults } from "vitest/config";
 
 const devLinks: Plugin = {
 	name: "dev-links",
@@ -47,6 +49,10 @@ const config = defineConfig({
 			},
 		}),
 	],
+	test: {
+		// e2e/ holds Playwright specs, run with `npm run test:e2e`.
+		exclude: [...configDefaults.exclude, "e2e/**"],
+	},
 });
 
 export default config;
