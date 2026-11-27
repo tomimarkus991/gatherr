@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -123,5 +124,20 @@ public class CalendarController {
         Long userId = JwtUtils.extractUserId(jwt);
         calendarService.revokeAccess(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Returns the Google consent URL as JSON, so the SPA can fetch it with its bearer token
+     * and then send the browser there.
+     */
+    @GetMapping("/auth/google/calendar/url")
+    public ResponseEntity<Map<String, String>> getCalendarAuthUrl(@AuthenticationPrincipal Jwt jwt) {
+        try {
+            String url = calendarService.buildAuthorizationUrl(JwtUtils.extractUserId(jwt));
+            return ResponseEntity.ok(Map.of("url", url));
+        } catch (Exception e) {
+            log.error("[CalendarController] Failed to get calendar auth URL", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

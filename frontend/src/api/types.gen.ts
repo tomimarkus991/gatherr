@@ -164,6 +164,22 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	"/auth/google/calendar/url": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get: operations["getCalendarAuthUrl"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 	"/auth/google/calendar/callback": {
 		parameters: {
 			query?: never;
@@ -616,6 +632,28 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content?: never;
+			};
+		};
+	};
+	getCalendarAuthUrl: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"*/*": {
+						[key: string]: string;
+					};
+				};
 			};
 		};
 	};
