@@ -4,8 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'backend/**'
-      - 'docker-compose.prod.yml'
+      - "backend/**"
+      - "docker-compose.prod.yml"
   workflow_dispatch:
 
 jobs:

@@ -1,0 +1,138 @@
+{
+  "output": "docs/c4",
+  "human_docs": "docs/architecture",
+  "sources": [
+    {
+      "name": "api",
+      "title": "Backend API (Spring Boot)",
+      "lang": "java",
+      "root": "backend/src/main/java",
+      "depth": 1
+    },
+    {
+      "name": "web",
+      "title": "Frontend SPA (React)",
+      "lang": "ts",
+      "root": "frontend/src",
+      "depth": 1,
+      "tsconfig": "frontend/tsconfig.json",
+      "exclude": [
+        "**/routeTree.gen.ts",
+        "**/*.test.*",
+        "**/*.spec.*"
+      ]
+    }
+  ],
+  "levels": {
+    "level-1": [
+      "README.md",
+      "SoW.md",
+      "backend/pom.xml",
+      "frontend/package.json",
+      "backend/src/main/resources/application.properties"
+    ],
+    "level-2": [
+      "docker-compose.yaml",
+      "docker-compose.prod.yml",
+      "backend/Dockerfile",
+      "backend/Dockerfile.dev",
+      ".github/workflows",
+      "frontend/vite.config.ts",
+      "backend/src/main/resources/application.properties"
+    ],
+    "level-3": [
+      "backend/src/main/java",
+      "frontend/src"
+    ],
+    "database": [
+      "backend/src/main/resources/db/changelog"
+    ]
+  },
+  "components": {
+    "api/(root)": {
+      "label": "Application",
+      "tech": "Spring Boot",
+      "desc": "Boots the app and seeds dev data"
+    },
+    "api/config": {
+      "label": "Config",
+      "tech": "Spring Security, springdoc",
+      "desc": "Security filter chain, JWT and OpenAPI setup"
+    },
+    "api/controller": {
+      "label": "Controllers",
+      "tech": "Spring Web",
+      "desc": "REST endpoints for auth, users, events, availability"
+    },
+    "api/dto": {
+      "label": "DTOs",
+      "tech": "Jakarta Validation, Lombok",
+      "desc": "Request and response payloads"
+    },
+    "api/mapper": {
+      "label": "Mappers",
+      "tech": "MapStruct",
+      "desc": "Maps users to response DTOs"
+    },
+    "api/model": {
+      "label": "Model",
+      "tech": "JPA, Hibernate",
+      "desc": "User, Event and EventUser entities"
+    },
+    "api/repository": {
+      "label": "Repositories",
+      "tech": "Spring Data JPA",
+      "desc": "Database access for users and events"
+    },
+    "api/service": {
+      "label": "Services",
+      "tech": "Spring, Transactions",
+      "desc": "Auth, JWT, event and availability logic"
+    },
+    "api/util": {
+      "label": "Utilities",
+      "tech": "Spring Security",
+      "desc": "JWT helpers and short-ID word lists"
+    },
+    "web/(root)": {
+      "label": "App shell",
+      "tech": "TanStack Router, t3-env",
+      "desc": "Router setup and typed env variables"
+    },
+    "web/api": {
+      "label": "API types",
+      "tech": "openapi-typescript",
+      "desc": "Generated types from the backend OpenAPI"
+    },
+    "web/components": {
+      "label": "Components",
+      "tech": "React, motion, Radix",
+      "desc": "UI primitives and page sections"
+    },
+    "web/hooks": {
+      "label": "Data hooks",
+      "tech": "TanStack Query",
+      "desc": "Queries and mutations against the API"
+    },
+    "web/integrations": {
+      "label": "Query provider",
+      "tech": "TanStack Query",
+      "desc": "Query client, devtools and app init"
+    },
+    "web/lib": {
+      "label": "Lib",
+      "tech": "axios, date-fns-tz",
+      "desc": "HTTP client, timezone and class helpers"
+    },
+    "web/mocks": {
+      "label": "Mocks",
+      "tech": "MSW, faker",
+      "desc": "Mock API handlers and demo data"
+    },
+    "web/routes": {
+      "label": "Routes",
+      "tech": "TanStack Router",
+      "desc": "Home, create and event pages"
+    }
+  }
+}

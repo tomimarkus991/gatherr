@@ -14,7 +14,7 @@ export interface paths {
 		get?: never;
 		put: operations["respond"];
 		post?: never;
-		delete?: never;
+		delete: operations["leave"];
 		options?: never;
 		head?: never;
 		patch?: never;
@@ -68,6 +68,22 @@ export interface paths {
 		patch: operations["patchCurrentUser"];
 		trace?: never;
 	};
+	"/events/{shortId}": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get: operations["getEventByShortId"];
+		put?: never;
+		post?: never;
+		delete: operations["deleteEvent"];
+		options?: never;
+		head?: never;
+		patch: operations["updateEvent"];
+		trace?: never;
+	};
 	"/users/me/calendars": {
 		parameters: {
 			query?: never;
@@ -79,6 +95,22 @@ export interface paths {
 		put?: never;
 		post?: never;
 		delete: operations["revokeCalendarAccess"];
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/events/{shortId}/summary": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get: operations["summary"];
+		put?: never;
+		post?: never;
+		delete?: never;
 		options?: never;
 		head?: never;
 		patch?: never;
@@ -164,6 +196,8 @@ export interface components {
 			type: "SPECIFIC_DATES_AND_TIMES" | "SPECIFIC_DATES" | "WEEKDAYS" | "WEEKDAYS_AND_TIMES";
 			times: string[];
 			timezone: string;
+			/** Format: int32 */
+			timeIncrement: number;
 		};
 		EventResponseDto: {
 			/** Format: int64 */
@@ -175,12 +209,16 @@ export interface components {
 			creatorId?: number;
 			/** @enum {string} */
 			type?: "SPECIFIC_DATES_AND_TIMES" | "SPECIFIC_DATES" | "WEEKDAYS" | "WEEKDAYS_AND_TIMES";
+			times?: string[];
+			/** Format: int32 */
+			timeIncrement?: number;
 			timezone?: string;
 			/** Format: int32 */
 			respondedCount?: number;
 		};
 		AuthRequestDto: {
 			idToken?: string;
+			accessToken?: string;
 			timezone?: string;
 		};
 		AuthResponseDto: {
@@ -192,7 +230,6 @@ export interface components {
 			profilePicture?: string;
 		};
 		UpdateUserDto: {
-			timezone?: string;
 			startOnMonday?: boolean;
 			timeFormat24?: boolean;
 			language?: string;
@@ -203,10 +240,13 @@ export interface components {
 			name?: string;
 			email?: string;
 			profilePicture?: string;
-			timezone?: string;
 			startOnMonday?: boolean;
 			timeFormat24?: boolean;
 			language?: string;
+		};
+		UpdateEventDto: {
+			name?: string;
+			description?: string;
 		};
 		CalendarListDto: {
 			calendars?: components["schemas"]["CalendarSummaryDto"][];
@@ -214,6 +254,32 @@ export interface components {
 		CalendarSummaryDto: {
 			id?: string;
 			summary?: string;
+		};
+		EventSummaryDto: {
+			users?: components["schemas"]["EventUserDto"][];
+			slots?: components["schemas"]["SlotSummaryDto"][];
+		};
+		EventUserDto: {
+			user?: components["schemas"]["UserInfo"];
+			available?: string[];
+			notAvailable?: string[];
+		};
+		SlotSummaryDto: {
+			slot?: string;
+			/** Format: int32 */
+			count?: number;
+			users?: components["schemas"]["SlotUserDto"][];
+		};
+		SlotUserDto: {
+			/** Format: int64 */
+			id?: number;
+			name?: string;
+		};
+		UserInfo: {
+			/** Format: int64 */
+			id?: number;
+			name?: string;
+			profilePicture?: string;
 		};
 		BusySlotsDto: {
 			busySlots?: string[];
@@ -241,6 +307,26 @@ export interface operations {
 				"application/json": components["schemas"]["RespondDto"];
 			};
 		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	leave: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				shortId: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
 		responses: {
 			/** @description OK */
 			200: {
@@ -343,6 +429,74 @@ export interface operations {
 			};
 		};
 	};
+	getEventByShortId: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				shortId: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"*/*": components["schemas"]["EventResponseDto"];
+				};
+			};
+		};
+	};
+	deleteEvent: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				shortId: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	updateEvent: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				shortId: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["UpdateEventDto"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"*/*": components["schemas"]["EventResponseDto"];
+				};
+			};
+		};
+	};
 	listCalendars: {
 		parameters: {
 			query?: never;
@@ -378,6 +532,28 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content?: never;
+			};
+		};
+	};
+	summary: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				shortId: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"*/*": components["schemas"]["EventSummaryDto"];
+				};
 			};
 		};
 	};
