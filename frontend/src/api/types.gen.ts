@@ -36,6 +36,22 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	"/events/{shortId}/confirm": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		post: operations["confirmEvent"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 	"/auth/google": {
 		parameters: {
 			query?: never;
@@ -84,22 +100,6 @@ export interface paths {
 		patch: operations["updateEvent"];
 		trace?: never;
 	};
-	"/users/me/calendars": {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get: operations["listCalendars"];
-		put?: never;
-		post?: never;
-		delete: operations["revokeCalendarAccess"];
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
 	"/events/{shortId}/summary": {
 		parameters: {
 			query?: never;
@@ -116,22 +116,6 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
-	"/events/{shortId}/calendar-busy": {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get: operations["getBusySlots"];
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
 	"/events/mine": {
 		parameters: {
 			query?: never;
@@ -140,38 +124,6 @@ export interface paths {
 			cookie?: never;
 		};
 		get: operations["getMyEvents"];
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	"/auth/google/calendar": {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get: operations["initiateCalendarAuth"];
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	"/auth/google/calendar/callback": {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get: operations["calendarCallback"];
 		put?: never;
 		post?: never;
 		delete?: never;
@@ -215,6 +167,15 @@ export interface components {
 			timezone?: string;
 			/** Format: int32 */
 			respondedCount?: number;
+			/** Format: date-time */
+			confirmedAt?: string;
+			/** Format: date-time */
+			confirmedStart?: string;
+			/** Format: date-time */
+			confirmedEnd?: string;
+		};
+		ConfirmEventDto: {
+			slot: string;
 		};
 		AuthRequestDto: {
 			idToken?: string;
@@ -248,13 +209,6 @@ export interface components {
 			name?: string;
 			description?: string;
 		};
-		CalendarListDto: {
-			calendars?: components["schemas"]["CalendarSummaryDto"][];
-		};
-		CalendarSummaryDto: {
-			id?: string;
-			summary?: string;
-		};
 		EventSummaryDto: {
 			users?: components["schemas"]["EventUserDto"][];
 			slots?: components["schemas"]["SlotSummaryDto"][];
@@ -280,9 +234,6 @@ export interface components {
 			id?: number;
 			name?: string;
 			profilePicture?: string;
-		};
-		BusySlotsDto: {
-			busySlots?: string[];
 		};
 	};
 	responses: never;
@@ -347,6 +298,32 @@ export interface operations {
 		requestBody: {
 			content: {
 				"application/json": components["schemas"]["CreateEventDto"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"*/*": components["schemas"]["EventResponseDto"];
+				};
+			};
+		};
+	};
+	confirmEvent: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				shortId: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["ConfirmEventDto"];
 			};
 		};
 		responses: {
@@ -497,44 +474,6 @@ export interface operations {
 			};
 		};
 	};
-	listCalendars: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description OK */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"*/*": components["schemas"]["CalendarListDto"];
-				};
-			};
-		};
-	};
-	revokeCalendarAccess: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description OK */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content?: never;
-			};
-		};
-	};
 	summary: {
 		parameters: {
 			query?: never;
@@ -557,30 +496,6 @@ export interface operations {
 			};
 		};
 	};
-	getBusySlots: {
-		parameters: {
-			query: {
-				calendarIds: string[];
-			};
-			header?: never;
-			path: {
-				shortId: string;
-			};
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description OK */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"*/*": components["schemas"]["BusySlotsDto"];
-				};
-			};
-		};
-	};
 	getMyEvents: {
 		parameters: {
 			query?: never;
@@ -598,45 +513,6 @@ export interface operations {
 				content: {
 					"*/*": components["schemas"]["EventResponseDto"][];
 				};
-			};
-		};
-	};
-	initiateCalendarAuth: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description OK */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content?: never;
-			};
-		};
-	};
-	calendarCallback: {
-		parameters: {
-			query?: {
-				code?: string;
-				error?: string;
-			};
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description OK */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content?: never;
 			};
 		};
 	};

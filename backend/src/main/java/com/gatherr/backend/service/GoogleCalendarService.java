@@ -9,6 +9,7 @@ import com.gatherr.backend.model.UserGoogleToken;
 import com.gatherr.backend.repository.EventRepository;
 import com.gatherr.backend.repository.UserGoogleTokenRepository;
 import com.gatherr.backend.repository.UserRepository;
+import com.gatherr.backend.util.SlotWindows;
 import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
@@ -29,10 +30,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.*;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -40,7 +41,6 @@ import java.util.Set;
 public class GoogleCalendarService {
     private static final GsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private static final String APPLICATION_NAME = "Gatherr";
-    private static final DateTimeFormatter SLOT_DATE_FMT = DateTimeFormatter.ofPattern("ddMMyyyy");
 
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String clientId;
@@ -57,17 +57,20 @@ public class GoogleCalendarService {
     private final UserRepository userRepository;
     private final UserGoogleTokenRepository tokenRepository;
     private final EventRepository eventRepository;
+    private final CalendarOAuthState oauthState;
 
     /**
      * Builds the Google consent-screen URL requesting calendar.readonly scope.
-     * The frontend redirects the user to this URL.
+     * The frontend redirects the user to this URL. The signed state tells the callback who the user is,
+     * because Google's redirect back carries no bearer token.
      */
-    public String buildAuthorizationUrl() throws GeneralSecurityException, IOException {
+    public String buildAuthorizationUrl(Long userId) throws GeneralSecurityException, IOException {
         return buildFlow()
                 .newAuthorizationUrl()
                 .setRedirectUri(baseUrl + "/auth/google/calendar/callback")
                 .setAccessType("offline")   // request a refresh token
                 .setApprovalPrompt("force") // force consent so refresh token is always returned
+                .setState(oauthState.issue(userId))
                 .build();
     }
 
@@ -119,11 +122,12 @@ public class GoogleCalendarService {
     }
 
     /**
-     * Fetches events from the selected calendars for the Gatherr event's date range,
-     * then maps occupied time windows to the app's slot format ("HHMM-DDMMYYYY").
+     * Fetches events from the selected calendars across the Gatherr event's slots,
+     * then returns the slots that overlap any of them.
      *
-     * Only slots that exist in the event's own {@code times} list are returned,
-     * so the result is always a valid subset of the event's candidate slots.
+     * Slots are read in the event's timezone and work for every event type: date-only and weekday
+     * slots cover the whole day, weekday slots stand for their next occurrence (see {@link SlotWindows}).
+     * Only slots from the event's own {@code times} list are returned.
      */
     public BusySlotsDto getBusySlots(Long userId, String shortId, List<String> calendarIds)
             throws GeneralSecurityException, IOException {
@@ -131,38 +135,44 @@ public class GoogleCalendarService {
         Event event = eventRepository.findByShortId(shortId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found: " + shortId));
 
-        // Determine date range from the event's slot list
-        DateRange range = resolveDateRange(event.getTimes());
-        if (range == null) return new BusySlotsDto(List.of());
+        ZoneId zone = ZoneId.of(event.getTimezone());
+        LocalDate today = LocalDate.now(zone);
+        Map<String, SlotWindows.Window> slotWindows = new LinkedHashMap<>();
+        for (String slot : event.getTimes()) {
+            SlotWindows.of(slot, zone, event.getTimeIncrement(), today)
+                    .ifPresent(window -> slotWindows.put(slot, window));
+        }
+        if (slotWindows.isEmpty()) return new BusySlotsDto(List.of());
+
+        Instant rangeStart = slotWindows.values().stream().map(SlotWindows.Window::start).min(Instant::compareTo).orElseThrow();
+        Instant rangeEnd = slotWindows.values().stream().map(SlotWindows.Window::end).max(Instant::compareTo).orElseThrow();
 
         Calendar service = buildCalendarService(userId);
 
-        // Collect all Google Calendar event time windows across selected calendars
-        List<TimeWindow> busyWindows = new ArrayList<>();
+        List<SlotWindows.Window> busyWindows = new ArrayList<>();
         for (String calendarId : calendarIds) {
             Events result = service.events().list(calendarId)
-                    .setTimeMin(toGoogleDateTime(range.start().atStartOfDay(ZoneOffset.UTC)))
-                    .setTimeMax(toGoogleDateTime(range.end().plusDays(1).atStartOfDay(ZoneOffset.UTC)))
+                    .setTimeMin(new com.google.api.client.util.DateTime(rangeStart.toEpochMilli()))
+                    .setTimeMax(new com.google.api.client.util.DateTime(rangeEnd.toEpochMilli()))
                     .setSingleEvents(true)
                     .setOrderBy("startTime")
                     .execute();
 
             if (result.getItems() == null) continue;
             for (com.google.api.services.calendar.model.Event gcalEvent : result.getItems()) {
-                TimeWindow window = extractWindow(gcalEvent);
+                SlotWindows.Window window = extractWindow(gcalEvent, zone);
                 if (window != null) busyWindows.add(window);
             }
         }
 
-        // Match busy windows against the event's candidate slots
-        Set<String> eventSlots = new java.util.HashSet<>(event.getTimes());
-        List<String> busySlots = event.getTimes().stream()
-                .filter(slot -> eventSlots.contains(slot) && isSlotBusy(slot, event.getTimeIncrement(), busyWindows))
+        List<String> busySlots = slotWindows.entrySet().stream()
+                .filter(entry -> busyWindows.stream().anyMatch(entry.getValue()::overlaps))
+                .map(Map.Entry::getKey)
                 .toList();
 
         return new BusySlotsDto(busySlots);
     }
-    
+
     /**
      * Returns a valid access token for the user, refreshing it first if it has expired.
      */
@@ -199,68 +209,26 @@ public class GoogleCalendarService {
         return token.getAccessToken();
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers — slot/time conversion
-    // -------------------------------------------------------------------------
-
-    /** Parses "HHMM-DDMMYYYY" into a LocalDateTime. */
-    private LocalDateTime parseSlot(String slot) {
-        // slot = "0930-26042026"
-        int hour   = Integer.parseInt(slot.substring(0, 2));
-        int minute = Integer.parseInt(slot.substring(2, 4));
-        // date part starts after the dash at index 5
-        LocalDate date = LocalDate.parse(slot.substring(5), SLOT_DATE_FMT);
-        return date.atTime(hour, minute);
-    }
-
-    /** Returns true if the slot's time window overlaps any busy window. */
-    private boolean isSlotBusy(String slot, int incrementMinutes, List<TimeWindow> busyWindows) {
-        LocalDateTime slotStart = parseSlot(slot);
-        LocalDateTime slotEnd   = slotStart.plusMinutes(incrementMinutes);
-        for (TimeWindow window : busyWindows) {
-            // Overlap: slot starts before window ends AND slot ends after window starts
-            if (slotStart.isBefore(window.end()) && slotEnd.isAfter(window.start())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** Extracts the earliest and latest dates covered by the slot list. */
-    private DateRange resolveDateRange(List<String> slots) {
-        if (slots == null || slots.isEmpty()) return null;
-        LocalDate min = null, max = null;
-        for (String slot : slots) {
-            LocalDate date = LocalDate.parse(slot.substring(5), SLOT_DATE_FMT);
-            if (min == null || date.isBefore(min)) min = date;
-            if (max == null || date.isAfter(max))  max = date;
-        }
-        return new DateRange(min, max);
-    }
-
-    private com.google.api.client.util.DateTime toGoogleDateTime(ZonedDateTime zdt) {
-        return new com.google.api.client.util.DateTime(zdt.toInstant().toEpochMilli());
-    }
-
-    /** Extracts a start/end window from a Google Calendar event (handles all-day events). */
-    private TimeWindow extractWindow(com.google.api.services.calendar.model.Event gcalEvent) {
+    /**
+     * Extracts a start/end window from a Google Calendar event. All-day events carry only dates,
+     * which are read as whole days in the Gatherr event's timezone.
+     */
+    private SlotWindows.Window extractWindow(com.google.api.services.calendar.model.Event gcalEvent, ZoneId zone) {
         com.google.api.services.calendar.model.EventDateTime start = gcalEvent.getStart();
         com.google.api.services.calendar.model.EventDateTime end   = gcalEvent.getEnd();
         if (start == null || end == null) return null;
 
-        LocalDateTime startDt, endDt;
-        if (start.getDateTime() != null) {
-            // Timed event
-            startDt = LocalDateTime.ofInstant(Instant.ofEpochMilli(start.getDateTime().getValue()), ZoneOffset.UTC);
-            endDt   = LocalDateTime.ofInstant(Instant.ofEpochMilli(end.getDateTime().getValue()),   ZoneOffset.UTC);
-        } else if (start.getDate() != null) {
-            // All-day event
-            startDt = LocalDate.parse(start.getDate().toStringRfc3339()).atStartOfDay();
-            endDt   = LocalDate.parse(end.getDate().toStringRfc3339()).atStartOfDay();
-        } else {
-            return null;
+        if (start.getDateTime() != null && end.getDateTime() != null) {
+            return new SlotWindows.Window(
+                    Instant.ofEpochMilli(start.getDateTime().getValue()),
+                    Instant.ofEpochMilli(end.getDateTime().getValue()));
         }
-        return new TimeWindow(startDt, endDt);
+        if (start.getDate() != null && end.getDate() != null) {
+            return new SlotWindows.Window(
+                    LocalDate.parse(start.getDate().toStringRfc3339()).atStartOfDay(zone).toInstant(),
+                    LocalDate.parse(end.getDate().toStringRfc3339()).atStartOfDay(zone).toInstant());
+        }
+        return null;
     }
 
     private GoogleAuthorizationCodeFlow buildFlow() throws GeneralSecurityException, IOException {
@@ -291,6 +259,4 @@ public class GoogleCalendarService {
         ).setApplicationName(APPLICATION_NAME).build();
     }
 
-    private record TimeWindow(LocalDateTime start, LocalDateTime end) {}
-    private record DateRange(LocalDate start, LocalDate end) {}
 }
