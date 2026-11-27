@@ -128,4 +128,19 @@ public class EventService {
                 ));
     }
 
+    @Transactional
+    public void deleteEvent(Long userId, String shortId) {
+        Event event = eventRepository.findByShortIdAndIsDeletedFalse(shortId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Event not found: " + shortId
+                ));
+
+        if (!event.getCreator().getId().equals(userId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Forbidden"
+            );
+        }
+        event.setDeleted(true);
+        eventRepository.save(event);
+    }
 }

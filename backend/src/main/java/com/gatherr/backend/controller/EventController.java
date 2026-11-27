@@ -50,7 +50,7 @@ public class EventController {
     }
 
     @PatchMapping("/{shortId}")
-    public ResponseEntity<EventResponseDto>getEventByShortId(
+    public ResponseEntity<EventResponseDto> updateEvent(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable String shortId,
             @RequestBody UpdateEventDto updateEventDto
@@ -58,5 +58,15 @@ public class EventController {
         Long creatorId = JwtUtils.extractUserId(jwt);
         EventResponseDto updatedEvent = eventService.updateEvent(creatorId, shortId, updateEventDto);
         return ResponseEntity.ok(updatedEvent);
+    }
+
+    @DeleteMapping("/{shortId}")
+    public ResponseEntity<Void> deleteEvent(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String shortId
+    ) {
+        Long creatorId = JwtUtils.extractUserId(jwt);
+        eventService.deleteEvent(creatorId, shortId);
+        return ResponseEntity.noContent().build();
     }
 }
