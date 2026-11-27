@@ -1,13 +1,20 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <explanation> */
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
-import { format } from "date-fns";
+import { addDays, format, startOfWeek } from "date-fns";
 import { CheckIcon, PenBoxIcon, PencilIcon, XIcon } from "lucide-react";
 import { motion, type Variants } from "motion/react";
 import { useRef, useState } from "react";
 import type { components } from "../../../../api/types.gen";
 import { useGetEvent } from "../../../../hooks/query/useGetEvent";
 import { useGetMe } from "../../../../hooks/query/useGetMe";
-import { convertSlot } from "../../../../lib/timezone";
+import {
+	compareDays,
+	convertSlot,
+	isWeekday,
+	joinSlot,
+	parseSlot,
+	WEEKDAYS,
+} from "../../../../lib/timezone";
 import { cn } from "../../../../lib/utils";
 import { m } from "../../../../paraglide/messages";
 import { getLocale } from "../../../../paraglide/runtime";
@@ -43,6 +50,46 @@ const TwoElementMovingBox = ({ selectedIndex, duration = 0.4 }: TwoElementMoving
 	);
 };
 
+/** A Date to format a day header with: the date itself, or that weekday in the current week. */
+const dayToDate = (day: string) =>
+	isWeekday(day)
+		? addDays(
+				startOfWeek(new Date(), { weekStartsOn: 1 }),
+				WEEKDAYS.indexOf(day as (typeof WEEKDAYS)[number]),
+			)
+		: new Date(
+				Number.parseInt(day.slice(4, 8), 10),
+				Number.parseInt(day.slice(2, 4), 10) - 1,
+				Number.parseInt(day.slice(0, 2), 10),
+			);
+
+const capitalize = (text: string, length: number) =>
+	text.charAt(0).toUpperCase() + text.slice(1, length).toLowerCase();
+
+const DayLabel = ({ day, small }: { day: string; small?: boolean }) => {
+	const date = dayToDate(day);
+	return (
+		<p className="text-nowrap text-center">
+			<span className={cn("font-semibold", small && "text-md")}>
+				{capitalize(format(date, "EEE", { locale: dateFnsLocale }), 3)}
+			</span>
+			{!isWeekday(day) && (
+				<>
+					<br />
+					<span className={cn("text-[#BABABA]", small && "text-xs")}>
+						{`${capitalize(
+							format(date, "MMM", { locale: dateFnsLocale }),
+							getLocale() === "et" ? 4 : 3,
+						)} ${format(date, "d")}`}
+					</span>
+				</>
+			)}
+		</p>
+	);
+};
+
+const formatTime = (time: string) => `${time.slice(0, 2)}:${time.slice(2, 4)}`;
+
 interface Props {
 	shortId: string;
 	selectedSlots: string[];
@@ -74,8 +121,9 @@ export const HeatmapTabs = ({
 	const eventTz = event?.details.timezone ?? "UTC";
 	const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+	// Grid: one row per time (a single row when the event has no times), one column per date or weekday.
 	const uniqueTimes = new Set<string>();
-	const uniqueDates = new Set<string>();
+	const uniqueDays = new Set<string>();
 	const heatMapSlots = new Map<string, components["schemas"]["SlotSummaryDto"]>();
 	// maps display-tz slot → original event-tz slot (for selectedSlots lookups)
 	const displayToSlot = new Map<string, string>();
@@ -83,26 +131,25 @@ export const HeatmapTabs = ({
 	for (const eventSlot of event?.details.times ?? []) {
 		const displaySlot = convertSlot(eventSlot, eventTz, userTz);
 		displayToSlot.set(displaySlot, eventSlot);
-		const [_time, date] = displaySlot.split("-");
-		uniqueTimes.add(_time);
-		uniqueDates.add(date ?? "");
+		const { time, day } = parseSlot(displaySlot);
+		if (time) uniqueTimes.add(time);
+		uniqueDays.add(day);
 	}
 
 	for (const slot of event?.summary.slots ?? []) {
 		if (slot.slot) heatMapSlots.set(slot.slot, slot);
 	}
 
-	const heatMapTimes = Array.from(uniqueTimes).sort();
-	const heatMapDates = Array.from(uniqueDates).sort((a, b) => {
-		const sortableA = a.slice(4, 8) + a.slice(2, 4) + a.slice(0, 2);
-		const sortableB = b.slice(4, 8) + b.slice(2, 4) + b.slice(0, 2);
-		return sortableA.localeCompare(sortableB);
-	});
+	const hasTimes = uniqueTimes.size > 0;
+	const heatMapTimes: (string | null)[] = hasTimes ? Array.from(uniqueTimes).sort() : [null];
+	const heatMapDates = Array.from(uniqueDays).sort(compareDays);
+	// Slots that exist in the event; grid positions without one (e.g. after a timezone shift) stay empty.
+	const slotAt = (time: string | null, day: string) => displayToSlot.get(joinSlot(time, day));
 
-	const toggleRow = (displayTime: string) => {
-		const rowSlots = Array.from(heatMapDates).map(
-			date => displayToSlot.get(`${displayTime}-${date}`) ?? `${displayTime}-${date}`,
-		);
+	const toggleRow = (displayTime: string | null) => {
+		const rowSlots = heatMapDates
+			.map(date => slotAt(displayTime, date))
+			.filter((slot): slot is string => !!slot);
 		const allSelected = rowSlots.every(slot => selectedSlots.includes(slot));
 		setSelectedSlots(prev =>
 			allSelected
@@ -112,9 +159,9 @@ export const HeatmapTabs = ({
 	};
 
 	const toggleColumn = (displayDate: string) => {
-		const colSlots = Array.from(heatMapTimes).map(
-			time => displayToSlot.get(`${time}-${displayDate}`) ?? `${time}-${displayDate}`,
-		);
+		const colSlots = heatMapTimes
+			.map(time => slotAt(time, displayDate))
+			.filter((slot): slot is string => !!slot);
 		const allSelected = colSlots.every(slot => selectedSlots.includes(slot));
 		setSelectedSlots(prev =>
 			allSelected
@@ -217,13 +264,8 @@ export const HeatmapTabs = ({
 						>
 							{/* date headers */}
 							<div className="flex flex-row mb-6">
-								<div className="w-16 shrink-0 mb-6" />
-								{Array.from(heatMapDates.values()).map(heatMapDate => {
-									const date = new Date(
-										parseInt(heatMapDate.slice(4, 8)),
-										parseInt(heatMapDate.slice(2, 4)) - 1,
-										parseInt(heatMapDate.slice(0, 2)),
-									);
+								{hasTimes && <div className="w-16 shrink-0 mb-6" />}
+								{heatMapDates.map(heatMapDate => {
 									return (
 										<Button
 											variant="dark"
@@ -236,27 +278,7 @@ export const HeatmapTabs = ({
 											key={heatMapDate}
 											onClick={() => toggleColumn(heatMapDate)}
 										>
-											<p className="text-nowrap text-center">
-												<span className="font-semibold text-md">
-													{(() => {
-														const dayName = format(date, "EEE", { locale: dateFnsLocale });
-														return (
-															dayName.charAt(0).toUpperCase() + dayName.slice(1, 3).toLowerCase()
-														);
-													})()}
-												</span>
-												<br />
-												<span className="text-[#BABABA] text-xs">
-													{(() => {
-														const month = format(date, "MMM", { locale: dateFnsLocale });
-														const day = format(date, "d");
-														const shortMonth =
-															month.charAt(0).toUpperCase() +
-															month.slice(1, getLocale() === "et" ? 4 : 3);
-														return `${shortMonth} ${day}`;
-													})()}
-												</span>
-											</p>
+											<DayLabel day={heatMapDate} small />
 										</Button>
 									);
 								})}
@@ -264,27 +286,30 @@ export const HeatmapTabs = ({
 
 							{/* time rows */}
 							<div>
-								{Array.from(heatMapTimes).map((heatMapTime, index) => (
-									<div key={heatMapTime + index} className="flex flex-row">
+								{heatMapTimes.map((heatMapTime, index) => (
+									<div key={`${heatMapTime}${index}`} className="flex flex-row">
 										{/* time on the left */}
-										<Button
-											variant="dark"
-											type="button"
-											size="xs"
-											className={cn(
-												"absolute -mt-3! px-2 py-1 rounded-2xl z-50",
-												me ? "cursor-pointer" : "cursor-default pointer-events-none opacity-50",
-											)}
-											onClick={() => toggleRow(heatMapTime)}
-										>
-											{heatMapTime.slice(0, 2)}:{heatMapTime.slice(2, 4)}
-										</Button>
-										{/* line separator between times. will leave it here as i don't know if I will use it */}
-										{/* <div className="w-full border absolute z-10 border-[#686868]"/>*/}
-										<div className="w-16 shrink-0" />
-										{Array.from(heatMapDates.values()).map(heatMapDate => {
-											const displaySlot = `${heatMapTime}-${heatMapDate}`;
-											const realSlot = displayToSlot.get(displaySlot) ?? displaySlot;
+										{heatMapTime && (
+											<Button
+												variant="dark"
+												type="button"
+												size="xs"
+												className={cn(
+													"absolute -mt-3! px-2 py-1 rounded-2xl z-50",
+													me ? "cursor-pointer" : "cursor-default pointer-events-none opacity-50",
+												)}
+												onClick={() => toggleRow(heatMapTime)}
+											>
+												{formatTime(heatMapTime)}
+											</Button>
+										)}
+										{hasTimes && <div className="w-16 shrink-0" />}
+										{heatMapDates.map(heatMapDate => {
+											const displaySlot = joinSlot(heatMapTime, heatMapDate);
+											const realSlot = slotAt(heatMapTime, heatMapDate);
+											if (!realSlot) {
+												return <div key={displaySlot} className="w-12 h-12 shrink-0 m-0.5" />;
+											}
 											const isInLocal = selectedSlots.includes(realSlot);
 
 											return (
@@ -339,52 +364,30 @@ export const HeatmapTabs = ({
 						<div className="p-4 bg-canvas rounded-2xl w-max mx-auto">
 							{/* date headers */}
 							<div className="flex flex-row">
-								<div className="w-16 shrink-0" />
-								{Array.from(heatMapDates.values()).map(heatMapDate => {
-									const date = new Date(
-										parseInt(heatMapDate.slice(4, 8)),
-										parseInt(heatMapDate.slice(2, 4)) - 1,
-										parseInt(heatMapDate.slice(0, 2)),
-									);
-									return (
-										<div className="w-12 mx-0.5 shrink-0" key={heatMapDate}>
-											<p className="text-nowrap text-center">
-												<span className="font-semibold">
-													{(() => {
-														const dayName = format(date, "EEE", { locale: dateFnsLocale });
-														return (
-															dayName.charAt(0).toUpperCase() + dayName.slice(1, 3).toLowerCase()
-														);
-													})()}
-												</span>
-												<br />
-												<span className="text-[#BABABA]">
-													{(() => {
-														const month = format(date, "MMM", { locale: dateFnsLocale });
-														const day = format(date, "d");
-														const shortMonth =
-															month.charAt(0).toUpperCase() +
-															month.slice(1, getLocale() === "et" ? 4 : 3);
-														return `${shortMonth} ${day}`;
-													})()}
-												</span>
-											</p>
-										</div>
-									);
-								})}
+								{hasTimes && <div className="w-16 shrink-0" />}
+								{heatMapDates.map(heatMapDate => (
+									<div className="w-12 mx-0.5 shrink-0" key={heatMapDate}>
+										<DayLabel day={heatMapDate} />
+									</div>
+								))}
 							</div>
 
 							{/* time rows */}
 							<div>
-								{Array.from(heatMapTimes).map((heatMapTime, index) => (
-									<div key={heatMapTime + index} className="flex flex-row">
-										<p className="text-lg font-semibold absolute -mt-1 z-10 bg-canvas px-2 rounded-2xl">
-											{heatMapTime.slice(0, 2)}:{heatMapTime.slice(2, 4)}
-										</p>
-										<div className="w-16 shrink-0" />
-										{Array.from(heatMapDates.values()).map(heatMapDate => {
-											const displaySlot = `${heatMapTime}-${heatMapDate}`;
-											const realSlot = displayToSlot.get(displaySlot) ?? displaySlot;
+								{heatMapTimes.map((heatMapTime, index) => (
+									<div key={`${heatMapTime}${index}`} className="flex flex-row">
+										{heatMapTime && (
+											<p className="text-lg font-semibold absolute -mt-1 z-10 bg-canvas px-2 rounded-2xl">
+												{formatTime(heatMapTime)}
+											</p>
+										)}
+										{hasTimes && <div className="w-16 shrink-0" />}
+										{heatMapDates.map(heatMapDate => {
+											const displaySlot = joinSlot(heatMapTime, heatMapDate);
+											const realSlot = slotAt(heatMapTime, heatMapDate);
+											if (!realSlot) {
+												return <div key={displaySlot} className="w-12 h-12 shrink-0 m-0.5" />;
+											}
 											const slot = heatMapSlots.get(realSlot);
 											const count = slot?.count ?? 0;
 											const hasMaxVotes = count === event?.summary.users?.length;
@@ -419,16 +422,8 @@ export const HeatmapTabs = ({
 													</PopoverTrigger>
 													<PopoverContent className="w-auto min-w-28 p-4">
 														<p className="text-lg font-semibold mb-1 text-center">
-															{heatMapTime.slice(0, 2)}:{heatMapTime.slice(2, 4)},{" "}
-															{format(
-																new Date(
-																	parseInt(heatMapDate.slice(4, 8)),
-																	parseInt(heatMapDate.slice(2, 4)) - 1,
-																	parseInt(heatMapDate.slice(0, 2)),
-																),
-																"EEEE",
-																{ locale: dateFnsLocale },
-															)}
+															{heatMapTime && `${formatTime(heatMapTime)}, `}
+															{format(dayToDate(heatMapDate), "EEEE", { locale: dateFnsLocale })}
 														</p>
 														<p className="flex-nowrap shrink-0 ml-2 font-number font-semibold text-center mb-4">
 															{slot?.users?.length || 0} / {event?.summary.users?.length}{" "}
