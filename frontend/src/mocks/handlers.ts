@@ -73,6 +73,12 @@ export const handlers = [
 		});
 	}),
 
+	// ── GET /stats ────────────────────────────────────────────────────────────
+	// Public: counts every event ever created, soft-deleted ones included.
+	http.get(`${BASE}/stats`, () => {
+		return HttpResponse.json({ totalEvents: EVENTS.length });
+	}),
+
 	// ── GET /users/me ─────────────────────────────────────────────────────────
 	http.get(`${BASE}/users/me`, ({ request }) => {
 		const auth = request.headers.get("Authorization");

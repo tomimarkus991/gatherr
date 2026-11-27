@@ -116,6 +116,22 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	"/stats": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get: operations["getStats"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 	"/events/{shortId}/summary": {
 		parameters: {
 			query?: never;
@@ -295,6 +311,10 @@ export interface components {
 		CalendarSummaryDto: {
 			id?: string;
 			summary?: string;
+		};
+		StatsDto: {
+			/** Format: int64 */
+			totalEvents?: number;
 		};
 		EventSummaryDto: {
 			users?: components["schemas"]["EventUserDto"][];
@@ -599,6 +619,26 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content?: never;
+			};
+		};
+	};
+	getStats: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"*/*": components["schemas"]["StatsDto"];
+				};
 			};
 		};
 	};

@@ -60,6 +60,7 @@
     "home_event_leave": "Lahku",
     "home_event_left": "Lahkusid üritusest",
     "home_event_coming_soon": "Tulemas",
+    "home_total_events": "Seni on loodud {count} üritust",
     "user_settings_sign_in_to_save": "Logi sisse seadete salvestamiseks",
     "create_event_calendar_date_disabled": "Sa ei saa valida minevikus olevat kuupäeva",
     "copy_link_copied": "Link kopeeritud!",

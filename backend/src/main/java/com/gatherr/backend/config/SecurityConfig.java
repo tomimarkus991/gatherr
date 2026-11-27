@@ -52,6 +52,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/google").permitAll() // The login endpoint is public so users can actually log in
                         .requestMatchers(new AntPathRequestMatcher("/auth/google/calendar/callback", HttpMethod.GET.name())).permitAll() // Google's redirect has no bearer token; the signed OAuth state identifies the user
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // Allow OpenAPI and Swagger UI to be accessed publicly
+                        .requestMatchers(new AntPathRequestMatcher("/stats", HttpMethod.GET.name())).permitAll() // Public site stats (total events count)
                         .requestMatchers(new AntPathRequestMatcher("/events/*/summary", HttpMethod.GET.name())).permitAll() // Public heatmap summary
                         .requestMatchers(new AntPathRequestMatcher("/events/mine", HttpMethod.GET.name())).authenticated() // My events requires auth
                         .requestMatchers(new AntPathRequestMatcher("/events/*", HttpMethod.GET.name())).permitAll() // Public event detail
