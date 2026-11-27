@@ -31,6 +31,6 @@ C4Deployment
   UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")
 ```
 
-- Push to `main` touching `backend/` builds the image to Docker Hub, copies `docker-compose.prod.yml` to `/my-apps/gatherr/` over SSH, writes `.env` from the `ENV_FILE` secret, and runs `docker compose up -d`.
-- Push to `main` touching `frontend/` runs `npm run build` and `wrangler pages deploy`.
+- Pushing a `v*` tag (e.g. `v1.0.0`) deploys both. The backend workflow builds the image to Docker Hub (tagged `latest`, the commit SHA and the version), copies `docker-compose.prod.yml` to `/my-apps/gatherr/` over SSH, writes `.env` from the `ENV_FILE` secret, and runs `docker compose up -d`.
+- The frontend workflow runs `npm run build` and `wrangler pages deploy --branch=main` (production).
 - The API and database share the `internal` network; only the API joins Traefik's `proxy` network.
