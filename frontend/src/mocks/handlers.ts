@@ -229,6 +229,18 @@ export const handlers = [
 		return HttpResponse.json(event);
 	}),
 
+	// ── DELETE /events/:shortId/respond (leave) ───────────────────────────────
+	http.delete(`${BASE}/events/:shortId/respond`, ({ params }) => {
+		const event = EVENTS.find(e => e.shortId === params.shortId && !e.isDeleted);
+		if (!event) return new HttpResponse(null, { status: 404 });
+		if (event.creator.id === activeUser.id) return new HttpResponse(null, { status: 403 });
+		const index = EVENT_USERS.findIndex(
+			eu => eu.event.shortId === params.shortId && eu.user.id === activeUser.id,
+		);
+		if (index !== -1) EVENT_USERS.splice(index, 1);
+		return new HttpResponse(null, { status: 204 });
+	}),
+
 	// ── DELETE /events/:shortId ───────────────────────────────────────────────
 	http.delete(`${BASE}/events/:shortId`, ({ params }) => {
 		const event = EVENTS.find(e => e.shortId === params.shortId);

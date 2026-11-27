@@ -14,7 +14,7 @@ export interface paths {
 		get?: never;
 		put: operations["respond"];
 		post?: never;
-		delete?: never;
+		delete: operations["leave"];
 		options?: never;
 		head?: never;
 		patch?: never;
@@ -81,7 +81,7 @@ export interface paths {
 		delete: operations["deleteEvent"];
 		options?: never;
 		head?: never;
-		patch?: never;
+		patch: operations["updateEvent"];
 		trace?: never;
 	};
 	"/events/{shortId}/summary": {
@@ -206,6 +206,10 @@ export interface components {
 			name?: string;
 			profilePicture?: string;
 		};
+		UpdateEventDto: {
+			name?: string;
+			description?: string;
+		};
 	};
 	responses: never;
 	parameters: never;
@@ -229,6 +233,26 @@ export interface operations {
 				"application/json": components["schemas"]["RespondDto"];
 			};
 		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	leave: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				shortId: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
 		responses: {
 			/** @description OK */
 			200: {
@@ -370,6 +394,32 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content?: never;
+			};
+		};
+	};
+	updateEvent: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				shortId: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["UpdateEventDto"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"*/*": components["schemas"]["EventResponseDto"];
+				};
 			};
 		};
 	};

@@ -1,9 +1,10 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 import { Link } from "@tanstack/react-router";
-import { EllipsisIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { EllipsisIcon, LogOutIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import toast from "react-hot-toast";
 import { useDeleteEvent } from "../../../../hooks/mutation/useDeleteEvent";
+import { useLeaveEvent } from "../../../../hooks/mutation/useLeaveEvent";
 import { useGetMe } from "../../../../hooks/query/useGetMe";
 import { useGetMyEvents } from "../../../../hooks/query/useGetMyEvents";
 import { cn } from "../../../../lib/utils";
@@ -15,6 +16,7 @@ export const MyEvents = () => {
 	const { data: myEvents, isLoading } = useGetMyEvents();
 	const { data: me } = useGetMe();
 	const { mutate: deleteEvent } = useDeleteEvent();
+	const { mutate: leaveEvent } = useLeaveEvent();
 
 	return (
 		<>
@@ -63,14 +65,25 @@ export const MyEvents = () => {
 													<PencilIcon className="size-4" />
 													{m.home_event_update()}
 												</button>
-												<button
-													type="button"
-													className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-paint w-full text-sm text-red-400 cursor-pointer"
-													onClick={() => deleteEvent(event.shortId ?? "")}
-												>
-													<Trash2Icon className="size-4" />
-													{m.home_event_delete()}
-												</button>
+												{isCreator ? (
+													<button
+														type="button"
+														className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-paint w-full text-sm text-red-400 cursor-pointer"
+														onClick={() => deleteEvent(event.shortId ?? "")}
+													>
+														<Trash2Icon className="size-4" />
+														{m.home_event_delete()}
+													</button>
+												) : (
+													<button
+														type="button"
+														className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-paint w-full text-sm text-red-400 cursor-pointer"
+														onClick={() => leaveEvent(event.shortId ?? "")}
+													>
+														<LogOutIcon className="size-4" />
+														{m.home_event_leave()}
+													</button>
+												)}
 											</PopoverContent>
 										</Popover>
 										<CopyLinkButton shortId={event.shortId ?? ""} className="px-2 py-1" />

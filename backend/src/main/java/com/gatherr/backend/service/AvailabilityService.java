@@ -71,6 +71,20 @@ public class AvailabilityService {
         eventUserRepository.save(eventUser);
     }
 
+    @Transactional
+    public void leave(Long userId, String shortId) {
+        Event event = eventRepository.findByShortId(shortId)
+                .filter(e -> !e.isDeleted())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+
+        if (event.getCreator() != null && userId.equals(event.getCreator().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "The creator cannot leave their own event");
+        }
+
+        eventUserRepository.findByEventShortIdAndUserId(shortId, userId)
+                .ifPresent(eventUserRepository::delete);
+    }
+
     @Transactional(readOnly = true)
     public EventSummaryDto getSummary(String shortId) {
         Event event = eventRepository.findByShortId(shortId)
