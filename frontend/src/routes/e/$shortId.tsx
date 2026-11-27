@@ -2,16 +2,16 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <explanation> */
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 import { createFileRoute } from "@tanstack/react-router";
-import { LinkIcon, UsersRound } from "lucide-react";
+import { UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
 import { GoogleIcon } from "../../components/icons/GoogleIcon";
 import { GradientIcon } from "../../components/icons/GradientIcon";
 import { Button } from "../../components/ui/button";
+import { CopyLinkButton } from "../../components/ui/CopyLinkButton";
 import { HeatmapTabs } from "../../components/ui/pages/event/HeatmapTabs";
 import { Skeleton } from "../../components/ui/skeleton";
 import { UserButton } from "../../components/ui/UserButton";
-import { useLogin } from "../../hooks/mutation/useLogin";
+import { useGoogleAuth } from "../../hooks/mutation/useGoogleAuth";
 import { useRespondToEvent } from "../../hooks/mutation/useRespondToEvent";
 import { useGetEvent } from "../../hooks/query/useGetEvent";
 import { useGetMe } from "../../hooks/query/useGetMe";
@@ -26,7 +26,7 @@ function RouteComponent() {
 	const { shortId } = Route.useParams();
 	const { data: event, isLoading } = useGetEvent(shortId);
 	const { data: me } = useGetMe();
-	const { mutate: login } = useLogin();
+	const handleLogin = useGoogleAuth();
 	const { mutate: respond, isPending: isSaving } = useRespondToEvent(shortId);
 
 	const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
@@ -36,22 +36,20 @@ function RouteComponent() {
 		respond({
 			shortId,
 			available: selectedSlots,
-			notAvailable: allTimes.filter(t => !selectedSlots.includes(t)),
+			notAvailable: allTimes.filter((time: string) => !selectedSlots.includes(time)),
 		});
 	};
 
+	// Show only the signed-in user's saved slots; switching accounts or logging out must not keep the previous user's selection.
 	useEffect(() => {
-		if (me) {
-			const currentUserSlots = event?.summary.users.find(user => user.user.id === me.id);
-			if (currentUserSlots) {
-				setSelectedSlots(() => currentUserSlots?.available);
-			}
-		}
-	}, [me, event]);
+		const currentUserSlots = me
+			? event?.summary.users?.find(user => user.user?.id === me.id)
+			: undefined;
+		setSelectedSlots(currentUserSlots?.available ?? []);
+	}, [me?.id, event]);
 
-	if (!event) {
-		return <p>Not found</p>;
-	}
+	if (isLoading) return null;
+	if (!event) return <p>Not found</p>;
 
 	return (
 		<main className="max-w-md m-auto pt-5 px-4 sm:px-0">
@@ -63,9 +61,8 @@ function RouteComponent() {
 					) : (
 						<p className="text-3xl mb-2 font-viking">{event?.details.name}</p>
 					)}
-					<Button size="xs" onClick={() => toast.success("Link copied!")}>
-						<LinkIcon className="size-5" />
-					</Button>
+
+					<CopyLinkButton shortId={shortId} text />
 				</div>
 				<div>
 					<UserButton />
@@ -81,7 +78,7 @@ function RouteComponent() {
 				<div className="bg-canvas rounded-2xl p-8 flex flex-col items-center mb-8">
 					<p className="text-2xl mb-8">{m.event_sign_in_title()}</p>
 					<div className="mb-8">
-						<Button onClick={() => login()} className="px-8">
+						<Button onClick={handleLogin} className="px-8">
 							<GoogleIcon className="size-8 mr-3" />
 							{m.create_continue_with_google()}
 						</Button>
@@ -103,7 +100,7 @@ function RouteComponent() {
 						{isLoading ? (
 							<Skeleton className="h-7 w-6 ml-6" />
 						) : (
-							<p className="text-xl ml-6">{event?.summary.users.length}</p>
+							<p className="text-xl ml-6">{event?.summary.users?.length}</p>
 						)}
 					</div>
 				</div>
@@ -123,21 +120,21 @@ function RouteComponent() {
 							))}
 						</>
 					) : (
-						event?.summary.users.map(({ user, available }) => (
-							<div key={user.id} className="flex flex-row">
+						event?.summary.users?.map(({ user, available }) => (
+							<div key={user?.id} className="flex flex-row">
 								<div className="mr-3">
-									{user.profilePicture ? (
+									{user?.profilePicture ? (
 										<img src={user.profilePicture} alt="PP" className="rounded-full size-8" />
 									) : (
-										<div className="bg-linear-to-tr from-primary from-5% to-secondary rounded-full text-center size-8">
-											<p className="">{user.name.slice(0, 1)}</p>
+										<div className="bg-linear-to-tr from-primary from-5% to-secondary rounded-full size-8 flex items-center justify-center">
+											<p>{user?.name?.slice(0, 1)}</p>
 										</div>
 									)}
 								</div>
 								<div>
-									<p className="text-xl">{user.name}</p>
+									<p className="text-xl">{user?.name}</p>
 									<p className="text-sm text-info">
-										{m.event_time_slots({ count: available.length })}
+										{m.event_time_slots({ count: available?.length ?? 0 })}
 									</p>
 								</div>
 							</div>
@@ -152,26 +149,26 @@ function RouteComponent() {
 			) : (
 				<div className="mb-12 flex flex-row font-semibold">
 					<p className="flex-nowrap shrink-0 mr-2 font-number">
-						0 / {event?.summary.users.length} {m.event_heatmap_info()}
+						0 / {event?.summary.users?.length} {m.event_heatmap_info()}
 					</p>
-					{[...Array(event?.summary.users.length! + 1)].map((_, count) => (
+					{[...Array(event?.summary.users?.length! + 1)].map((_, count) => (
 						<div
 							key={count}
 							className={cn(
 								"rounded-lg w-full text-center",
 								count === 0 ? "bg-paint" : "bg-primary",
-								count === event?.summary.users.length &&
+								count === event?.summary.users?.length &&
 									"border border-amber-300 shadow-sm shadow-amber-300",
 							)}
 							style={{
-								opacity: count > 0 ? count / (event?.summary.users.length || 1) : 1,
+								opacity: count > 0 ? count / (event?.summary.users?.length || 1) : 1,
 							}}
 						>
 							<p className="font-number">{count}</p>
 						</div>
 					))}
 					<p className="flex-nowrap shrink-0 ml-2 font-number">
-						{event?.summary.users.length} / {event?.summary.users.length} {m.event_heatmap_info()}
+						{event?.summary.users?.length} / {event?.summary.users?.length} {m.event_heatmap_info()}
 					</p>
 				</div>
 			)}

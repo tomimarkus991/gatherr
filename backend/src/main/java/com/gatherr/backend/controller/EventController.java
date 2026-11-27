@@ -2,6 +2,7 @@ package com.gatherr.backend.controller;
 
 import com.gatherr.backend.dto.CreateEventDto;
 import com.gatherr.backend.dto.EventResponseDto;
+import com.gatherr.backend.dto.UpdateEventDto;
 import com.gatherr.backend.service.EventService;
 import com.gatherr.backend.util.JwtUtils;
 
@@ -37,5 +38,35 @@ public class EventController {
         Long creatorId = JwtUtils.extractUserId(jwt);
         List<EventResponseDto> response = eventService.getMyEvents(creatorId);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{shortId}")
+    public ResponseEntity<EventResponseDto> getEventByShortId(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String shortId
+    ) {
+        EventResponseDto response = eventService.getEventByShortId(shortId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{shortId}")
+    public ResponseEntity<EventResponseDto> updateEvent(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String shortId,
+            @RequestBody UpdateEventDto updateEventDto
+    ) {
+        Long creatorId = JwtUtils.extractUserId(jwt);
+        EventResponseDto updatedEvent = eventService.updateEvent(creatorId, shortId, updateEventDto);
+        return ResponseEntity.ok(updatedEvent);
+    }
+
+    @DeleteMapping("/{shortId}")
+    public ResponseEntity<Void> deleteEvent(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String shortId
+    ) {
+        Long creatorId = JwtUtils.extractUserId(jwt);
+        eventService.deleteEvent(creatorId, shortId);
+        return ResponseEntity.noContent().build();
     }
 }

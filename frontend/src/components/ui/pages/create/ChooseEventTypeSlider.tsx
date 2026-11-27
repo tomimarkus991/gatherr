@@ -1,6 +1,4 @@
 import { motion, type Variants } from "motion/react";
-import { useState } from "react";
-import { cn } from "../../../../lib/utils";
 import type { EventType } from "../../../../mocks/types";
 import * as m from "../../../../paraglide/messages";
 import { ComponentExplainer } from "../../ComponentExplainer";
@@ -44,30 +42,32 @@ interface Props {
 	setSelected: React.Dispatch<React.SetStateAction<Date[]>>;
 	selectedDays: string[];
 	setSelectedDays: React.Dispatch<React.SetStateAction<string[]>>;
+	eventType: EventType;
 	setEventType: React.Dispatch<React.SetStateAction<EventType>>;
 }
+
+const hasTimes = (eventType: EventType) =>
+	eventType === "SPECIFIC_DATES_AND_TIMES" || eventType === "WEEKDAYS_AND_TIMES";
 
 export const ChooseEventTypeSlider = ({
 	selected,
 	setSelected,
 	selectedDays,
 	setSelectedDays,
+	eventType,
 	setEventType,
 }: Props) => {
-	const [selectedIndex, setSelectedIndex] = useState(0);
+	const selectedIndex = eventType === "WEEKDAYS" || eventType === "WEEKDAYS_AND_TIMES" ? 1 : 0;
 	return (
 		<Tabs
-			defaultValue="dates-and-times"
-			className={cn()}
+			value={selectedIndex === 0 ? "dates-and-times" : "days-of-the-week"}
 			onValueChange={value => {
-				if (value === "dates-and-times") {
-					setSelectedIndex(0);
-					setEventType("SPECIFIC_DATES_AND_TIMES");
-					setSelected([]);
+				// Switching between dates and weekdays keeps whether the event has times.
+				const withTimes = hasTimes(eventType);
+				if (value === "days-of-the-week") {
+					setEventType(withTimes ? "WEEKDAYS_AND_TIMES" : "WEEKDAYS");
 				} else {
-					setSelectedIndex(1);
-					setEventType("WEEKDAYS_AND_TIMES");
-					setSelectedDays([]);
+					setEventType(withTimes ? "SPECIFIC_DATES_AND_TIMES" : "SPECIFIC_DATES");
 				}
 			}}
 		>

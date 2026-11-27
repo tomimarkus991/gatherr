@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/correctness/useExhaustiveDependencies: <explanation> */
 import { createFileRoute } from "@tanstack/react-router";
-import { format, setMinutes, startOfDay } from "date-fns";
+import { format, isBefore, setMinutes, startOfDay, subDays } from "date-fns";
 import { User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { GoogleIcon } from "../components/icons/GoogleIcon";
@@ -26,7 +26,7 @@ import {
 	SelectValue,
 } from "../components/ui/select";
 import { useCreateEvent } from "../hooks/mutation/useCreateEvent";
-import { useLogin } from "../hooks/mutation/useLogin";
+import { useGoogleAuth } from "../hooks/mutation/useGoogleAuth";
 import { useGetMe } from "../hooks/query/useGetMe";
 import type { EventType } from "../mocks/types";
 import * as m from "../paraglide/messages";
@@ -71,7 +71,7 @@ function Create() {
 	const { name } = Route.useSearch();
 
 	const { mutate: createEvent } = useCreateEvent();
-	const { mutate: login } = useLogin();
+	const handleLogin = useGoogleAuth();
 	const { data: user } = useGetMe();
 
 	const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -85,7 +85,7 @@ function Create() {
 				{
 					name,
 					type: eventType,
-					times: calculateTimes(),
+					times: calculateTimes() ?? [],
 					timeIncrement,
 					timezone,
 				},
@@ -97,7 +97,9 @@ function Create() {
 	const draft = loadDraft();
 
 	const [calendarSelectedDates, setCalendarSelectedDates] = useState<Date[]>(
-		draft?.calendarSelectedDates.map(d => new Date(d)) ?? [],
+		draft?.calendarSelectedDates
+			.map(d => new Date(d))
+			.filter(d => !isBefore(d, subDays(new Date(), 1))) ?? [],
 	);
 	const [selectedDays, setSelectedDays] = useState<string[]>(draft?.selectedDays ?? []);
 
@@ -187,6 +189,7 @@ function Create() {
 				setSelected={setCalendarSelectedDates}
 				selectedDays={selectedDays}
 				setSelectedDays={setSelectedDays}
+				eventType={eventType}
 				setEventType={setEventType}
 			/>
 			<div>
@@ -213,39 +216,40 @@ function Create() {
 					body={
 						<div className="px-6 mb-2">
 							{/* start of time increment */}
-							<div className="flex flex-row items-center mb-4">
-								<p className="mr-3 text-lg font-semibold">{m.create_time_increment_label()}</p>
-								<Select
-									value={timeIncrement.toString()}
-									onValueChange={value => setTimeIncrement(parseInt(value))}
-								>
-									<SelectTrigger>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectGroup>
-											<SelectItem value="15">15 min</SelectItem>
-											<SelectItem value="30">30 min</SelectItem>
-											<SelectItem value="60">60 min</SelectItem>
-										</SelectGroup>
-									</SelectContent>
-								</Select>
+							<div className="mb-4">
+								<div className="flex flex-row items-center mb-1">
+									<p className="mr-3 text-lg font-semibold">{m.create_time_increment_label()}</p>
+									<Select
+										value={timeIncrement.toString()}
+										onValueChange={value => setTimeIncrement(parseInt(value))}
+									>
+										<SelectTrigger>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectGroup>
+												<SelectItem value="15">15 min</SelectItem>
+												<SelectItem value="30">30 min</SelectItem>
+												<SelectItem value="60">60 min</SelectItem>
+											</SelectGroup>
+										</SelectContent>
+									</Select>
+								</div>
+								<p className="text-sm text-info">{m.create_time_increment_description()}</p>
 							</div>
 
-							{/* start of time range button */}
+							{/* times on or off */}
 							<div className="flex flex-col justify-start mb-4">
 								{eventType === "SPECIFIC_DATES_AND_TIMES" || eventType === "WEEKDAYS_AND_TIMES" ? (
 									<>
 										<p className="text-info text-sm mb-2">{m.create_remove_time_ranges_hint()}</p>
 										<Button
 											className="self-start"
-											onClick={() => {
-												if (eventType === "SPECIFIC_DATES_AND_TIMES") {
-													setEventType("SPECIFIC_DATES");
-												} else if (eventType === "WEEKDAYS_AND_TIMES") {
-													setEventType("WEEKDAYS");
-												}
-											}}
+											onClick={() =>
+												setEventType(
+													eventType === "SPECIFIC_DATES_AND_TIMES" ? "SPECIFIC_DATES" : "WEEKDAYS",
+												)
+											}
 											variant="red"
 											size="xs"
 										>
@@ -256,14 +260,14 @@ function Create() {
 									<>
 										<p className="text-info text-sm mb-2">{m.create_add_time_ranges_hint()}</p>
 										<Button
-											onClick={() => {
-												if (eventType === "SPECIFIC_DATES") {
-													setEventType("SPECIFIC_DATES_AND_TIMES");
-												} else if (eventType === "WEEKDAYS") {
-													setEventType("WEEKDAYS_AND_TIMES");
-												}
-											}}
-											variant="red"
+											className="self-start"
+											onClick={() =>
+												setEventType(
+													eventType === "SPECIFIC_DATES"
+														? "SPECIFIC_DATES_AND_TIMES"
+														: "WEEKDAYS_AND_TIMES",
+												)
+											}
 											size="xs"
 										>
 											{m.create_add_time_ranges()}
@@ -314,7 +318,7 @@ function Create() {
 							{
 								name,
 								type: eventType,
-								times: calculateTimes(),
+								times: calculateTimes() ?? [],
 								timeIncrement,
 								timezone,
 							},
@@ -325,7 +329,6 @@ function Create() {
 					{m.create_event_button()}
 				</Button>
 			</div>
-			<div id="google-signin-btn" />
 
 			<Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
 				<DialogContent className="max-w-sm" showCloseButton={true}>
@@ -334,7 +337,7 @@ function Create() {
 						<DialogTitle className="font-medium text-2xl mb-8">
 							{m.create_sign_in_title()}
 						</DialogTitle>
-						<Button onClick={() => login()} className="mb-8 px-8">
+						<Button onClick={handleLogin} className="mb-8 px-8">
 							<GoogleIcon className="size-8 mr-3" />
 							{m.create_continue_with_google()}
 						</Button>

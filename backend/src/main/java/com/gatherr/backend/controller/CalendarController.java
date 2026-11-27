@@ -2,6 +2,7 @@ package com.gatherr.backend.controller;
 
 import com.gatherr.backend.dto.calendar.BusySlotsDto;
 import com.gatherr.backend.dto.calendar.CalendarListDto;
+import com.gatherr.backend.service.CalendarOAuthState;
 import com.gatherr.backend.service.GoogleCalendarService;
 import com.gatherr.backend.util.JwtUtils;
 
@@ -16,12 +17,14 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 public class CalendarController {
     private final GoogleCalendarService calendarService;
+    private final CalendarOAuthState oauthState;
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
@@ -29,7 +32,7 @@ public class CalendarController {
     @GetMapping("/auth/google/calendar")
     public ResponseEntity<Void> initiateCalendarAuth(@AuthenticationPrincipal Jwt jwt) {
         try {
-            String authUrl = calendarService.buildAuthorizationUrl();
+            String authUrl = calendarService.buildAuthorizationUrl(JwtUtils.extractUserId(jwt));
             return ResponseEntity.status(302).location(URI.create(authUrl)).build();
         } catch (Exception e) {
             log.error("[CalendarController] Failed to build auth URL", e);
@@ -38,34 +41,40 @@ public class CalendarController {
     }
 
     /**
-     * Google redirects here after the user grants or denies consent.
+     * Google redirects the browser here after the user grants or denies consent. The redirect carries
+     * no bearer token, so the endpoint is public and the user comes from the signed {@code state}.
      * Exchanges the code for tokens, stores them, then redirects to the frontend.
      */
     @GetMapping("/auth/google/calendar/callback")
     public ResponseEntity<Void> calendarCallback(
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String error,
-            @AuthenticationPrincipal Jwt jwt) 
+            @RequestParam(required = false) String state)
     {
         if (error != null || code == null) {
             log.warn("[CalendarController] OAuth callback error: {}", error);
-            return ResponseEntity.status(302)
-                    .location(URI.create(frontendUrl + "/calendar-connect?error=access_denied"))
-                    .build();
+            return redirectToFrontend("error=access_denied");
+        }
+
+        Optional<Long> userId = oauthState.verify(state);
+        if (userId.isEmpty()) {
+            log.warn("[CalendarController] OAuth callback with invalid or expired state");
+            return redirectToFrontend("error=invalid_state");
         }
 
         try {
-            Long userId = JwtUtils.extractUserId(jwt);
-            calendarService.handleCallback(userId, code);
-            return ResponseEntity.status(302)
-                    .location(URI.create(frontendUrl + "/calendar-connect?success=true"))
-                    .build();
+            calendarService.handleCallback(userId.get(), code);
+            return redirectToFrontend("success=true");
         } catch (Exception e) {
             log.error("[CalendarController] Callback failed", e);
-            return ResponseEntity.status(302)
-                    .location(URI.create(frontendUrl + "/calendar-connect?error=server_error"))
-                    .build();
+            return redirectToFrontend("error=server_error");
         }
+    }
+
+    private ResponseEntity<Void> redirectToFrontend(String query) {
+        return ResponseEntity.status(302)
+                .location(URI.create(frontendUrl + "/calendar-connect?" + query))
+                .build();
     }
 
     /**
@@ -117,11 +126,14 @@ public class CalendarController {
         return ResponseEntity.noContent().build();
     }
 
-    // CalendarController — add this
+    /**
+     * Returns the Google consent URL as JSON, so the SPA can fetch it with its bearer token
+     * and then send the browser there.
+     */
     @GetMapping("/auth/google/calendar/url")
     public ResponseEntity<Map<String, String>> getCalendarAuthUrl(@AuthenticationPrincipal Jwt jwt) {
         try {
-            String url = calendarService.buildAuthorizationUrl();
+            String url = calendarService.buildAuthorizationUrl(JwtUtils.extractUserId(jwt));
             return ResponseEntity.ok(Map.of("url", url));
         } catch (Exception e) {
             log.error("[CalendarController] Failed to get calendar auth URL", e);
