@@ -1,7 +1,4 @@
 import { motion, type Variants } from "motion/react";
-import { useState } from "react";
-import toast from "react-hot-toast";
-import { cn } from "../../../../lib/utils";
 import type { EventType } from "../../../../mocks/types";
 import * as m from "../../../../paraglide/messages";
 import { ComponentExplainer } from "../../ComponentExplainer";
@@ -45,37 +42,39 @@ interface Props {
 	setSelected: React.Dispatch<React.SetStateAction<Date[]>>;
 	selectedDays: string[];
 	setSelectedDays: React.Dispatch<React.SetStateAction<string[]>>;
+	eventType: EventType;
 	setEventType: React.Dispatch<React.SetStateAction<EventType>>;
 }
+
+const hasTimes = (eventType: EventType) =>
+	eventType === "SPECIFIC_DATES_AND_TIMES" || eventType === "WEEKDAYS_AND_TIMES";
 
 export const ChooseEventTypeSlider = ({
 	selected,
 	setSelected,
 	selectedDays,
 	setSelectedDays,
+	eventType,
 	setEventType,
 }: Props) => {
-	const [selectedIndex, setSelectedIndex] = useState(0);
+	const selectedIndex = eventType === "WEEKDAYS" || eventType === "WEEKDAYS_AND_TIMES" ? 1 : 0;
 	return (
 		<Tabs
 			value={selectedIndex === 0 ? "dates-and-times" : "days-of-the-week"}
-			className={cn()}
 			onValueChange={value => {
+				// Switching between dates and weekdays keeps whether the event has times.
+				const withTimes = hasTimes(eventType);
 				if (value === "days-of-the-week") {
-					toast.error(m.development(), { id: "days-of-week-disabled" });
-					return;
+					setEventType(withTimes ? "WEEKDAYS_AND_TIMES" : "WEEKDAYS");
+				} else {
+					setEventType(withTimes ? "SPECIFIC_DATES_AND_TIMES" : "SPECIFIC_DATES");
 				}
-				setSelectedIndex(0);
-				setEventType("SPECIFIC_DATES_AND_TIMES");
-				setSelected([]);
 			}}
 		>
 			<div className="bg-canvas p-2 rounded-xl max-w-xl m-auto">
 				<TabsList>
 					<TabsTrigger value="dates-and-times">{m.choose_event_type_dates_and_times()}</TabsTrigger>
-					<TabsTrigger value="days-of-the-week" className="opacity-50 cursor-not-allowed">
-						{m.choose_event_type_weekdays()}
-					</TabsTrigger>
+					<TabsTrigger value="days-of-the-week">{m.choose_event_type_weekdays()}</TabsTrigger>
 					<TwoElementMovingBox selectedIndex={selectedIndex} />
 				</TabsList>
 			</div>
