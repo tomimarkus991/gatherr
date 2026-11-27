@@ -22,6 +22,8 @@ import java.util.List;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -125,5 +127,22 @@ class AvailabilityControllerTest {
 
         mockMvc.perform(get("/events/missing/summary"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void leave_returns401_whenNoAuthorizationHeader() throws Exception {
+        mockMvc.perform(delete(PATH))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(availabilityService);
+    }
+
+    @Test
+    void leave_returns204_whenAuthenticated() throws Exception {
+        mockMvc.perform(delete(PATH)
+                        .with(jwt().jwt(builder -> builder.subject("42"))))
+                .andExpect(status().isNoContent());
+
+        verify(availabilityService).leave(42L, "some-event-123");
     }
 }

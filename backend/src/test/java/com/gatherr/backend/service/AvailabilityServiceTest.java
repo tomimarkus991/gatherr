@@ -381,4 +381,54 @@ class AvailabilityServiceTest {
         assertThat(summary.slots().get(0).count()).isEqualTo(1);
         assertThat(summary.slots().get(0).users()).extracting("id").containsExactly(7L);
     }
+
+    @Test
+    void leave_returnsNotFound_whenEventDoesNotExist() {
+        when(eventRepository.findByShortId(SHORT_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> availabilityService.leave(USER_ID, SHORT_ID))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("404");
+
+        verify(eventUserRepository, never()).delete(any());
+    }
+
+    @Test
+    void leave_returnsForbidden_whenUserIsCreator() {
+        event.setCreator(user);
+        when(eventRepository.findByShortId(SHORT_ID)).thenReturn(Optional.of(event));
+
+        assertThatThrownBy(() -> availabilityService.leave(USER_ID, SHORT_ID))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("403");
+
+        verify(eventUserRepository, never()).delete(any());
+    }
+
+    @Test
+    void leave_deletesResponse_whenUserJoinedEvent() {
+        User creator = new User();
+        creator.setId(99L);
+        event.setCreator(creator);
+        EventUser eventUser = new EventUser();
+        when(eventRepository.findByShortId(SHORT_ID)).thenReturn(Optional.of(event));
+        when(eventUserRepository.findByEventShortIdAndUserId(SHORT_ID, USER_ID)).thenReturn(Optional.of(eventUser));
+
+        availabilityService.leave(USER_ID, SHORT_ID);
+
+        verify(eventUserRepository).delete(eventUser);
+    }
+
+    @Test
+    void leave_doesNothing_whenUserHasNotJoined() {
+        User creator = new User();
+        creator.setId(99L);
+        event.setCreator(creator);
+        when(eventRepository.findByShortId(SHORT_ID)).thenReturn(Optional.of(event));
+        when(eventUserRepository.findByEventShortIdAndUserId(SHORT_ID, USER_ID)).thenReturn(Optional.empty());
+
+        availabilityService.leave(USER_ID, SHORT_ID);
+
+        verify(eventUserRepository, never()).delete(any());
+    }
 }

@@ -28,6 +28,15 @@ public class AvailabilityController {
         return ResponseEntity.ok().build();
     }
 
+    @DeleteMapping("/{shortId}/respond")
+    public ResponseEntity<Void> leave(
+            @PathVariable String shortId,
+            @AuthenticationPrincipal Jwt jwt) {
+        Long userId = JwtUtils.extractUserId(jwt);
+        availabilityService.leave(userId, shortId);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{shortId}/summary")
     public ResponseEntity<EventSummaryDto> summary(@PathVariable String shortId) {
         return ResponseEntity.ok(availabilityService.getSummary(shortId));
