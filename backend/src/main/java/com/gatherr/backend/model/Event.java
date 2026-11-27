@@ -58,6 +58,15 @@ public class Event {
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false;
 
+    @Column(name = "confirmed_at")
+    private OffsetDateTime confirmedAt;
+
+    @Column(name = "confirmed_start")
+    private OffsetDateTime confirmedStart;
+
+    @Column(name = "confirmed_end")
+    private OffsetDateTime confirmedEnd;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;

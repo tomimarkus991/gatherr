@@ -1,5 +1,6 @@
 package com.gatherr.backend.service;
 
+import com.gatherr.backend.dto.ConfirmEventDto;
 import com.gatherr.backend.dto.CreateEventDto;
 import com.gatherr.backend.dto.EventResponseDto;
 import com.gatherr.backend.dto.UpdateEventDto;
@@ -9,6 +10,8 @@ import com.gatherr.backend.model.User;
 import com.gatherr.backend.repository.EventRepository;
 import com.gatherr.backend.repository.EventUserRepository;
 import com.gatherr.backend.repository.UserRepository;
+import com.gatherr.backend.util.ConfirmedSlot;
+import com.gatherr.backend.util.SlotTimes;
 import com.gatherr.backend.util.WordConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,6 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -27,6 +34,8 @@ public class EventService {
     private final EventRepository eventRepository;
     private final EventUserRepository eventUserRepository;
     private final UserRepository userRepository;
+    private final ConfirmationMailService confirmationMailService;
+    private final Clock clock;
 
     @Transactional
     public EventResponseDto createEvent(Long creatorId, CreateEventDto dto) {
@@ -142,5 +151,31 @@ public class EventService {
         }
         event.setDeleted(true);
         eventRepository.save(event);
+    }
+
+    @Transactional
+    public EventResponseDto confirmEvent(Long userId, String shortId, ConfirmEventDto dto) {
+        Event event = findActiveEventByShortId(shortId);
+        if (!event.getCreator().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the organiser can confirm a time");
+        }
+        if (event.getTimes() == null || !event.getTimes().contains(dto.slot())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Slot is not one of the event's times");
+        }
+
+        ConfirmedSlot slot = SlotTimes.resolve(event.getType(), dto.slot(), ZoneId.of(event.getTimezone()),
+                event.getTimeIncrement(), clock);
+        Instant now = clock.instant();
+        event.setConfirmedAt(now.atOffset(ZoneOffset.UTC));
+        event.setConfirmedStart(slot.start().toOffsetDateTime());
+        event.setConfirmedEnd(slot.end().toOffsetDateTime());
+        Event savedEvent = eventRepository.save(event);
+
+        List<User> participants = eventUserRepository.findByEventShortId(shortId).stream()
+                .map(EventUser::getUser)
+                .toList();
+        confirmationMailService.sendConfirmation(savedEvent, slot, participants, now);
+
+        return EventResponseDto.from(savedEvent);
     }
 }
