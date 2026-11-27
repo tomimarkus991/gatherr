@@ -100,6 +100,22 @@ export interface paths {
 		patch: operations["updateEvent"];
 		trace?: never;
 	};
+	"/users/me/calendars": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get: operations["listCalendars"];
+		put?: never;
+		post?: never;
+		delete: operations["revokeCalendarAccess"];
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 	"/events/{shortId}/summary": {
 		parameters: {
 			query?: never;
@@ -116,6 +132,22 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	"/events/{shortId}/calendar-busy": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get: operations["getBusySlots"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 	"/events/mine": {
 		parameters: {
 			query?: never;
@@ -124,6 +156,54 @@ export interface paths {
 			cookie?: never;
 		};
 		get: operations["getMyEvents"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/auth/google/calendar": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get: operations["initiateCalendarAuth"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/auth/google/calendar/url": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get: operations["getCalendarAuthUrl"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/auth/google/calendar/callback": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get: operations["calendarCallback"];
 		put?: never;
 		post?: never;
 		delete?: never;
@@ -209,6 +289,13 @@ export interface components {
 			name?: string;
 			description?: string;
 		};
+		CalendarListDto: {
+			calendars?: components["schemas"]["CalendarSummaryDto"][];
+		};
+		CalendarSummaryDto: {
+			id?: string;
+			summary?: string;
+		};
 		EventSummaryDto: {
 			users?: components["schemas"]["EventUserDto"][];
 			slots?: components["schemas"]["SlotSummaryDto"][];
@@ -234,6 +321,9 @@ export interface components {
 			id?: number;
 			name?: string;
 			profilePicture?: string;
+		};
+		BusySlotsDto: {
+			busySlots?: string[];
 		};
 	};
 	responses: never;
@@ -474,6 +564,44 @@ export interface operations {
 			};
 		};
 	};
+	listCalendars: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"*/*": components["schemas"]["CalendarListDto"];
+				};
+			};
+		};
+	};
+	revokeCalendarAccess: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
 	summary: {
 		parameters: {
 			query?: never;
@@ -496,6 +624,30 @@ export interface operations {
 			};
 		};
 	};
+	getBusySlots: {
+		parameters: {
+			query: {
+				calendarIds: string[];
+			};
+			header?: never;
+			path: {
+				shortId: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"*/*": components["schemas"]["BusySlotsDto"];
+				};
+			};
+		};
+	};
 	getMyEvents: {
 		parameters: {
 			query?: never;
@@ -513,6 +665,68 @@ export interface operations {
 				content: {
 					"*/*": components["schemas"]["EventResponseDto"][];
 				};
+			};
+		};
+	};
+	initiateCalendarAuth: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	getCalendarAuthUrl: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"*/*": {
+						[key: string]: string;
+					};
+				};
+			};
+		};
+	};
+	calendarCallback: {
+		parameters: {
+			query?: {
+				code?: string;
+				error?: string;
+				state?: string;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
 			};
 		};
 	};

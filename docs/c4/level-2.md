@@ -31,5 +31,5 @@ C4Container
 
 - SPA build: `VITE_API_URL=https://api.gatherr.alber.ee/api/v1` (`deploy-frontend.yml`). With `VITE_ENABLE_MOCK=true` the SPA uses MSW (`frontend/src/mocks`) and calls `/api/v1` locally instead of the API.
 - Auth: the API JWT is kept in `localStorage` (`token`) and sent as `Authorization: Bearer` by `frontend/src/lib/axios.ts`.
-- Deploy: push to `main` builds the API image to Docker Hub and runs `docker compose -f docker-compose.prod.yml up` on the VPS over SSH; the SPA deploys with wrangler. CI on PRs runs `./mvnw verify` (`verify-backend.yml`).
+- Deploy: pushing a `v*` tag builds the API image to Docker Hub and runs `docker compose -f docker-compose.prod.yml up` on the VPS over SSH; the same tag deploys the SPA with wrangler. Pushing to `main` deploys nothing. CI on PRs runs `./mvnw verify` (`verify-backend.yml`).
 - Local dev: `docker-compose.yaml` runs Postgres + API (`Dockerfile.dev`, mounts `frontend/` to generate `frontend/src/api/types.gen.ts` from OpenAPI); the SPA runs with `npm run dev` on :3000.

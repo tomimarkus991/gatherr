@@ -24,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../tabs";
 import { useIsMobile } from "../../useIsMobile";
 import { dateFnsLocale } from "../create/calendar/Calendar";
+import { CalendarImport } from "./CalendarImport";
 
 interface TwoElementMovingBoxProps {
 	selectedIndex: number;
@@ -204,6 +205,17 @@ export const HeatmapTabs = ({
 							</div>
 						</div>
 					</div>
+
+					{me && (
+						<div className="flex justify-center mb-3">
+							<CalendarImport
+								shortId={shortId}
+								onBusySlotsLoaded={busySlots =>
+									setSelectedSlots(prev => prev.filter(slot => !busySlots.includes(slot)))
+								}
+							/>
+						</div>
+					)}
 
 					{me && (
 						<div className="flex flex-row gap-2 mb-3 justify-center">
