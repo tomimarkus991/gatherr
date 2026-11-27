@@ -40,14 +40,13 @@ function RouteComponent() {
 		});
 	};
 
+	// Show only the signed-in user's saved slots; switching accounts or logging out must not keep the previous user's selection.
 	useEffect(() => {
-		if (me) {
-			const currentUserSlots = event?.summary.users?.find(user => user.user?.id === me.id);
-			if (currentUserSlots) {
-				setSelectedSlots(currentUserSlots.available ?? []);
-			}
-		}
-	}, [me, event]);
+		const currentUserSlots = me
+			? event?.summary.users?.find(user => user.user?.id === me.id)
+			: undefined;
+		setSelectedSlots(currentUserSlots?.available ?? []);
+	}, [me?.id, event]);
 
 	if (isLoading) return null;
 	if (!event) return <p>Not found</p>;
