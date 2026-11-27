@@ -189,6 +189,7 @@ function Create() {
 				setSelected={setCalendarSelectedDates}
 				selectedDays={selectedDays}
 				setSelectedDays={setSelectedDays}
+				eventType={eventType}
 				setEventType={setEventType}
 			/>
 			<div>
@@ -235,6 +236,44 @@ function Create() {
 									</Select>
 								</div>
 								<p className="text-sm text-info">{m.create_time_increment_description()}</p>
+							</div>
+
+							{/* times on or off */}
+							<div className="flex flex-col justify-start mb-4">
+								{eventType === "SPECIFIC_DATES_AND_TIMES" || eventType === "WEEKDAYS_AND_TIMES" ? (
+									<>
+										<p className="text-info text-sm mb-2">{m.create_remove_time_ranges_hint()}</p>
+										<Button
+											className="self-start"
+											onClick={() =>
+												setEventType(
+													eventType === "SPECIFIC_DATES_AND_TIMES" ? "SPECIFIC_DATES" : "WEEKDAYS",
+												)
+											}
+											variant="red"
+											size="xs"
+										>
+											{m.create_remove_time_ranges()}
+										</Button>
+									</>
+								) : (
+									<>
+										<p className="text-info text-sm mb-2">{m.create_add_time_ranges_hint()}</p>
+										<Button
+											className="self-start"
+											onClick={() =>
+												setEventType(
+													eventType === "SPECIFIC_DATES"
+														? "SPECIFIC_DATES_AND_TIMES"
+														: "WEEKDAYS_AND_TIMES",
+												)
+											}
+											size="xs"
+										>
+											{m.create_add_time_ranges()}
+										</Button>
+									</>
+								)}
 							</div>
 
 							<div>
