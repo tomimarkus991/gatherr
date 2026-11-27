@@ -2,6 +2,7 @@ package com.gatherr.backend.dto;
 
 import com.gatherr.backend.model.Event;
 import com.gatherr.backend.model.enums.EventType;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public record EventResponseDto(
@@ -14,7 +15,10 @@ public record EventResponseDto(
         List<String> times,
         int timeIncrement,
         String timezone,
-        int respondedCount
+        int respondedCount,
+        OffsetDateTime confirmedAt,
+        OffsetDateTime confirmedStart,
+        OffsetDateTime confirmedEnd
 ) {
     public static EventResponseDto from(Event event) {
         int respondedCount = event.getEventUsers() == null ? 0 : (int) event.getEventUsers().stream()
@@ -31,7 +35,10 @@ public record EventResponseDto(
                 event.getTimes(),
                 event.getTimeIncrement(),
                 event.getTimezone(),
-                respondedCount
+                respondedCount,
+                event.getConfirmedAt(),
+                event.getConfirmedStart(),
+                event.getConfirmedEnd()
         );
     }
 }

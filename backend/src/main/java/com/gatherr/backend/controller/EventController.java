@@ -1,5 +1,6 @@
 package com.gatherr.backend.controller;
 
+import com.gatherr.backend.dto.ConfirmEventDto;
 import com.gatherr.backend.dto.CreateEventDto;
 import com.gatherr.backend.dto.EventResponseDto;
 import com.gatherr.backend.dto.UpdateEventDto;
@@ -58,6 +59,17 @@ public class EventController {
         Long creatorId = JwtUtils.extractUserId(jwt);
         EventResponseDto updatedEvent = eventService.updateEvent(creatorId, shortId, updateEventDto);
         return ResponseEntity.ok(updatedEvent);
+    }
+
+    @PostMapping("/{shortId}/confirm")
+    public ResponseEntity<EventResponseDto> confirmEvent(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String shortId,
+            @Valid @RequestBody ConfirmEventDto confirmEventDto
+    ) {
+        Long userId = JwtUtils.extractUserId(jwt);
+        EventResponseDto confirmedEvent = eventService.confirmEvent(userId, shortId, confirmEventDto);
+        return ResponseEntity.ok(confirmedEvent);
     }
 
     @DeleteMapping("/{shortId}")
