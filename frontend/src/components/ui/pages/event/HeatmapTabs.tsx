@@ -62,9 +62,11 @@ export const HeatmapTabs = ({
 	const { data: me } = useGetMe();
 
 	const { isMobile } = useIsMobile();
-	const [selectedIndex, setSelectedIndex] = useState(me ? 0 : 1);
+	const [preferredIndex, setPreferredIndex] = useState(me ? 0 : 1);
+	// "Yours" needs a signed-in user, so logged-out visitors always see the group heatmap.
+	const selectedIndex = me ? preferredIndex : 1;
 	const [isSelectMode, setIsSelectMode] = useState(false);
-	const canDrag = !isMobile || isSelectMode;
+	const canDrag = !!me && (!isMobile || isSelectMode);
 	const [openSlot, setOpenSlot] = useState<string | null>(null);
 	const isDragging = useRef(false);
 	const visitedSlots = useRef(new Set<string>());
@@ -129,14 +131,16 @@ export const HeatmapTabs = ({
 			<Tabs
 				value={selectedIndex === 0 ? "yours" : "group"}
 				onValueChange={value => {
-					setSelectedIndex(value === "yours" ? 0 : 1);
+					setPreferredIndex(value === "yours" ? 0 : 1);
 					setIsSelectMode(false);
 					setOpenSlot(null);
 				}}
 			>
 				<div className="bg-canvas p-2 rounded-xl max-w-xl m-auto mb-6">
 					<TabsList>
-						<TabsTrigger value="yours">{m.event_tab_yours()}</TabsTrigger>
+						<TabsTrigger value="yours" disabled={!me}>
+							{m.event_tab_yours()}
+						</TabsTrigger>
 						<TabsTrigger value="group">{m.event_tab_group()}</TabsTrigger>
 						<TwoElementMovingBox selectedIndex={selectedIndex} />
 					</TabsList>
@@ -166,7 +170,7 @@ export const HeatmapTabs = ({
 								size="xs"
 								onClick={() => {
 									onSave();
-									setSelectedIndex(1);
+									setPreferredIndex(1);
 								}}
 								disabled={isSaving}
 							>
