@@ -11,17 +11,20 @@ import { cn } from "../../../../lib/utils";
 import { m } from "../../../../paraglide/messages";
 import { CopyLinkButton } from "../../CopyLinkButton";
 import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
+import { TotalEventsCount } from "./TotalEventsCount";
 
 export const MyEvents = () => {
 	const { data: myEvents, isLoading } = useGetMyEvents();
 	const { data: me } = useGetMe();
 	const { mutate: deleteEvent } = useDeleteEvent();
 	const { mutate: leaveEvent } = useLeaveEvent();
+	const hasEvents = !!myEvents?.length && !isLoading;
 
 	return (
 		<>
-			{myEvents?.length && !isLoading ? (
-				<div className="flex flex-col space-y-4 bg-canvas rounded-xl px-6 py-6 mt-12 mx-4">
+			{hasEvents && <TotalEventsCount className="text-info text-sm text-center mt-8" />}
+			{hasEvents ? (
+				<div className="flex flex-col space-y-4 bg-canvas rounded-xl px-6 py-6 mt-4 mx-4">
 					{myEvents.map(event => {
 						const isCreator = me?.id === event.creatorId;
 
@@ -100,6 +103,7 @@ export const MyEvents = () => {
 						<span className="text-gradient">{m.home_hero_title_gradient()}</span>
 					</p>
 					<p className="text-info max-w-xs text-center m-auto">{m.home_hero_text()}</p>
+					<TotalEventsCount className="text-info text-sm text-center mt-4" />
 				</>
 			)}
 		</>
