@@ -7,6 +7,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
 
+/** Access and refresh tokens are stored AES-GCM encrypted (see {@link EncryptedStringConverter}). */
 @Entity
 @Table(name = "user_google_tokens")
 @Getter @Setter
@@ -23,10 +24,12 @@ public class UserGoogleToken {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
+    @Convert(converter = EncryptedStringConverter.class)
     @Column(name = "access_token", nullable = false, columnDefinition = "text")
     private String accessToken;
 
     /** Null when Google does not issue a new refresh token (already granted once). */
+    @Convert(converter = EncryptedStringConverter.class)
     @Column(name = "refresh_token", columnDefinition = "text")
     private String refreshToken;
 
