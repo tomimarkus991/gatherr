@@ -191,6 +191,44 @@ export const DEMO_EVENT: Event = {
 	updatedAt: new Date().toISOString(),
 };
 
+// Two-step events (#94). Dates are fixed so e2e tests can name them.
+export const TEAM_TRIP_EVENT: Event = {
+	id: 30,
+	name: "Team trip",
+	description: null,
+	shortId: "team-trip",
+	creator: ME,
+	type: "SPECIFIC_DATES",
+	times: ["07122026", "08122026", "09122026"],
+	timeIncrement: 30,
+	timezone: "Europe/Tallinn",
+	isDeleted: false,
+	respondedCount: 0,
+	createdAt: new Date().toISOString(),
+	updatedAt: new Date().toISOString(),
+};
+
+export const OLIVERS_DAY_VOTE_EVENT: Event = {
+	...TEAM_TRIP_EVENT,
+	id: 31,
+	name: "Oliver's day vote",
+	shortId: "olivers-day-vote",
+	creator: USERS[1],
+};
+
+/** Already in the time round on Tue 8 Dec 2026, 17:00–19:00 in 30-minute steps. */
+export const OLIVERS_TIME_ROUND_EVENT: Event = {
+	...TEAM_TRIP_EVENT,
+	id: 32,
+	name: "Oliver's time round",
+	shortId: "olivers-time-round",
+	creator: USERS[1],
+	type: "SPECIFIC_DATES_AND_TIMES",
+	times: ["1700-08122026", "1730-08122026", "1800-08122026", "1830-08122026", "1900-08122026"],
+	timeRoundDate: "2026-12-08",
+	dateTimes: ["07122026", "08122026"],
+};
+
 export const EVENTS: Event[] = [
 	GATHER_EVENT,
 	DEMO_EVENT,
@@ -201,6 +239,9 @@ export const EVENTS: Event[] = [
 	makeEvent(4, USERS[1], { name: "Oliver's picnic", shortId: "olivers-picnic" }),
 	makeEvent(5, USERS[2]),
 	makeEvent(6, USERS[3]),
+	TEAM_TRIP_EVENT,
+	OLIVERS_DAY_VOTE_EVENT,
+	OLIVERS_TIME_ROUND_EVENT,
 ];
 
 // ─── EventUsers (availability responses) ─────────────────────────────────────
@@ -209,7 +250,9 @@ export function makeEventUser(
 	id: number,
 	event: Event,
 	user: User,
-	overrides: { available?: string[]; notAvailable?: string[] } = {},
+	overrides: Partial<
+		Pick<EventUser, "available" | "notAvailable" | "dateAvailable" | "dateNotAvailable">
+	> = {},
 ): EventUser {
 	// Pick a random subset of event.times as available
 	// Other users get ~70% of slots marked available; ME starts with none
@@ -232,6 +275,8 @@ export function makeEventUser(
 		},
 		available,
 		notAvailable,
+		dateAvailable: overrides.dateAvailable,
+		dateNotAvailable: overrides.dateNotAvailable,
 		createdAt: faker.date.past({ years: 0.1 }).toISOString(),
 		updatedAt: isoNow(),
 	};
@@ -280,6 +325,33 @@ export const EVENT_USERS: EventUser[] = [
 	makeEventUser(4, EVENTS[3], ME, { available: [], notAvailable: [] }),
 	makeEventUser(5, EVENTS[3], USERS[3]),
 	makeEventUser(6, EVENTS[5], ME, { available: [], notAvailable: [] }),
+	// Team trip: Mon 7 Dec is the best day (2 of 3).
+	makeEventUser(30, TEAM_TRIP_EVENT, ME, { available: [], notAvailable: [] }),
+	makeEventUser(31, TEAM_TRIP_EVENT, USERS[1], {
+		available: ["07122026", "08122026"],
+		notAvailable: ["09122026"],
+	}),
+	makeEventUser(32, TEAM_TRIP_EVENT, USERS[2], {
+		available: ["07122026"],
+		notAvailable: ["08122026", "09122026"],
+	}),
+	makeEventUser(33, OLIVERS_DAY_VOTE_EVENT, USERS[1], {
+		available: ["07122026"],
+		notAvailable: [],
+	}),
+	makeEventUser(34, OLIVERS_DAY_VOTE_EVENT, ME, { available: ["08122026"], notAvailable: [] }),
+	makeEventUser(35, OLIVERS_TIME_ROUND_EVENT, USERS[1], {
+		available: ["1700-08122026", "1730-08122026"],
+		notAvailable: [],
+		dateAvailable: ["07122026", "08122026"],
+		dateNotAvailable: [],
+	}),
+	makeEventUser(36, OLIVERS_TIME_ROUND_EVENT, ME, {
+		available: [],
+		notAvailable: [],
+		dateAvailable: ["08122026"],
+		dateNotAvailable: ["07122026"],
+	}),
 ];
 
 for (const event of EVENTS) {

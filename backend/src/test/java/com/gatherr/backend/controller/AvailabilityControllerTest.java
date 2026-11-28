@@ -105,7 +105,8 @@ class AvailabilityControllerTest {
                         "1030-08042026",
                         1,
                         List.of(new SlotUserDto(1L, "Alice Müller"))
-                ))
+                )),
+                null
         );
         when(availabilityService.getSummary("some-event-123")).thenReturn(response);
 

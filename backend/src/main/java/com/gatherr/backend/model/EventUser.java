@@ -39,6 +39,15 @@ public class EventUser {
     @Column(name = "not_available", columnDefinition = "jsonb", nullable = false)
     private List<String> notAvailable;
 
+    /** Date-round answers, copied here when the time round starts; never changed after that. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "date_available", columnDefinition = "jsonb")
+    private List<String> dateAvailable;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "date_not_available", columnDefinition = "jsonb")
+    private List<String> dateNotAvailable;
+
     @Column(name = "timezone")
     private String timezone;
 

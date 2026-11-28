@@ -3,6 +3,7 @@ package com.gatherr.backend.controller;
 import com.gatherr.backend.dto.ConfirmEventDto;
 import com.gatherr.backend.dto.CreateEventDto;
 import com.gatherr.backend.dto.EventResponseDto;
+import com.gatherr.backend.dto.StartTimeRoundDto;
 import com.gatherr.backend.dto.UpdateEventDto;
 import com.gatherr.backend.service.EventService;
 import com.gatherr.backend.util.JwtUtils;
@@ -70,6 +71,16 @@ public class EventController {
         Long userId = JwtUtils.extractUserId(jwt);
         EventResponseDto confirmedEvent = eventService.confirmEvent(userId, shortId, confirmEventDto);
         return ResponseEntity.ok(confirmedEvent);
+    }
+
+    @PostMapping("/{shortId}/time-round")
+    public ResponseEntity<EventResponseDto> startTimeRound(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String shortId,
+            @Valid @RequestBody StartTimeRoundDto startTimeRoundDto
+    ) {
+        Long userId = JwtUtils.extractUserId(jwt);
+        return ResponseEntity.ok(eventService.startTimeRound(userId, shortId, startTimeRoundDto));
     }
 
     @DeleteMapping("/{shortId}")

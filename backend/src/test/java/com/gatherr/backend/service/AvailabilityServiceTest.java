@@ -431,4 +431,64 @@ class AvailabilityServiceTest {
 
         verify(eventUserRepository, never()).delete(any());
     }
+
+    @Test
+    void getSummary_inTheTimeRound_countsKeptDateAnswers_separatelyFromTimeAnswers() {
+        event.setTimezone("Europe/Tallinn");
+        event.setTimes(List.of("1800-31032026", "1830-31032026"));
+        event.setDateTimes(List.of("31032026", "01042026"));
+        event.setTimeRoundDate(java.time.LocalDate.of(2026, 3, 31));
+
+        User pat = new User();
+        pat.setId(7L);
+        pat.setName("Pat");
+        EventUser patAnswer = new EventUser();
+        patAnswer.setUser(pat);
+        patAnswer.setAvailable(List.of("1800-31032026"));
+        patAnswer.setNotAvailable(List.of("1830-31032026"));
+        patAnswer.setDateAvailable(List.of("31032026", "01042026"));
+        patAnswer.setDateNotAvailable(Collections.emptyList());
+
+        User kim = new User();
+        kim.setId(8L);
+        kim.setName("Kim");
+        EventUser kimAnswer = new EventUser();
+        kimAnswer.setUser(kim);
+        kimAnswer.setAvailable(Collections.emptyList());
+        kimAnswer.setNotAvailable(Collections.emptyList());
+        kimAnswer.setDateAvailable(List.of("31032026"));
+        kimAnswer.setDateNotAvailable(List.of("01042026"));
+
+        User newcomer = new User();
+        newcomer.setId(9L);
+        newcomer.setName("Newcomer");
+        EventUser newcomerAnswer = new EventUser();
+        newcomerAnswer.setUser(newcomer);
+        newcomerAnswer.setAvailable(List.of("1800-31032026"));
+        newcomerAnswer.setNotAvailable(Collections.emptyList());
+
+        when(eventRepository.findByShortId(SHORT_ID)).thenReturn(Optional.of(event));
+        when(eventUserRepository.findByEventShortId(SHORT_ID))
+                .thenReturn(List.of(patAnswer, kimAnswer, newcomerAnswer));
+
+        EventSummaryDto summary = availabilityService.getSummary(SHORT_ID);
+
+        assertThat(summary.slots()).extracting("slot").containsExactly("1800-31032026", "1830-31032026");
+        assertThat(summary.slots().get(0).count()).isEqualTo(2);
+        assertThat(summary.dateRound()).isNotNull();
+        assertThat(summary.dateRound().respondentCount()).isEqualTo(2);
+        assertThat(summary.dateRound().slots()).extracting("slot").containsExactly("31032026", "01042026");
+        assertThat(summary.dateRound().slots().get(0).count()).isEqualTo(2);
+        assertThat(summary.dateRound().slots().get(1).users()).extracting("id").containsExactly(7L);
+    }
+
+    @Test
+    void getSummary_hasNoDateRound_beforeTheTimeRoundStarts() {
+        event.setTimezone("Europe/Tallinn");
+        event.setTimes(List.of("31032026"));
+        when(eventRepository.findByShortId(SHORT_ID)).thenReturn(Optional.of(event));
+        when(eventUserRepository.findByEventShortId(SHORT_ID)).thenReturn(List.of());
+
+        assertThat(availabilityService.getSummary(SHORT_ID).dateRound()).isNull();
+    }
 }

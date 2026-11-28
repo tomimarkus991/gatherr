@@ -317,3 +317,27 @@ databaseChangeLog:
       changes:
         - delete:
             tableName: user_google_tokens
+
+  # 10. TWO-STEP EVENTS: TIME ROUND ON A PICKED DATE, DATE-ROUND ANSWERS KEPT (issue #94)
+  - changeSet:
+      id: 010-add-time-round
+      author: gatherr
+      changes:
+        - addColumn:
+            tableName: events
+            columns:
+              - column:
+                  name: time_round_date
+                  type: DATE
+              - column:
+                  name: date_times
+                  type: JSONB
+        - addColumn:
+            tableName: event_user
+            columns:
+              - column:
+                  name: date_available
+                  type: JSONB
+              - column:
+                  name: date_not_available
+                  type: JSONB

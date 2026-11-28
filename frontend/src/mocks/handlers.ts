@@ -26,6 +26,7 @@ import type {
 type CalendarListDto = components["schemas"]["CalendarListDto"];
 type BusySlotsDto = components["schemas"]["BusySlotsDto"];
 type ConfirmEventDto = components["schemas"]["ConfirmEventDto"];
+type StartTimeRoundDto = components["schemas"]["StartTimeRoundDto"];
 
 const BASE = "/api/v1";
 
@@ -111,8 +112,35 @@ function confirmedRange(event: Event, slot: string): { start: string; end: strin
   }).then(r => console.log('deleted, status:', r.status)))
  */
 
+/** Like Event.getRound(): TIME once a date is picked, DATE for a dates-only event, else none. */
+const roundOf = (event: Event) =>
+	event.timeRoundDate ? "TIME" : event.type === "SPECIFIC_DATES" ? "DATE" : undefined;
+
 /** The API returns the creator as `creatorId` (EventResponseDto), not the nested user. */
-const toEventDto = (event: Event) => ({ ...event, creatorId: event.creator.id });
+const toEventDto = (event: Event) => ({
+	...event,
+	creatorId: event.creator.id,
+	round: roundOf(event),
+});
+
+/** Heatmap slots for `times`: who marked each one available. */
+function slotSummaries(
+	times: string[],
+	answers: { user: { id: number; name: string }; available: string[] }[],
+) {
+	return times.map(slot => {
+		const users = answers
+			.filter(answer => answer.available.includes(slot))
+			.map(answer => ({ id: answer.user.id, name: answer.user.name }));
+		return { slot, count: users.length, users } satisfies SummarySlot;
+	});
+}
+
+/** "HH:mm" to minutes after midnight, or null if malformed. */
+function minutesOf(time: string): number | null {
+	const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(time);
+	return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+}
 
 // ── Auth state ───────────────────────────────────────────────────────────────
 let isLoggedIn = false;
@@ -254,9 +282,22 @@ export const handlers = [
 			};
 		});
 
+		const dateRound =
+			event.timeRoundDate && event.dateTimes
+				? {
+						respondentCount: userResponses.filter(eu => eu.dateAvailable || eu.dateNotAvailable)
+							.length,
+						slots: slotSummaries(
+							event.dateTimes,
+							userResponses.map(eu => ({ user: eu.user, available: eu.dateAvailable ?? [] })),
+						),
+					}
+				: null;
+
 		const responseWithHeatmap: SummaryResponse = {
 			users,
 			slots,
+			dateRound,
 		};
 
 		return HttpResponse.json(responseWithHeatmap);
@@ -316,6 +357,48 @@ export const handlers = [
 			updatedAt: now,
 		});
 		return HttpResponse.json(event);
+	}),
+
+	// ── POST /events/:shortId/time-round ──────────────────
+	// Like EventService.startTimeRound: one way, date answers kept, time answers start empty.
+	http.post(`${BASE}/events/:shortId/time-round`, async ({ params, request }) => {
+		const event = EVENTS.find(e => e.shortId === params.shortId && !e.isDeleted);
+		if (!event) return new HttpResponse(null, { status: 404 });
+		if (event.creator.id !== activeUser.id) return new HttpResponse(null, { status: 403 });
+		const { date, startTime, endTime, timeIncrement } = (await request.json()) as StartTimeRoundDto;
+		const start = minutesOf(startTime);
+		const end = minutesOf(endTime);
+		if (
+			roundOf(event) !== "DATE" ||
+			!event.times.includes(date) ||
+			![15, 30, 60].includes(timeIncrement) ||
+			start === null ||
+			end === null ||
+			start >= end
+		) {
+			return new HttpResponse(null, { status: 400 });
+		}
+		const times: string[] = [];
+		for (let minute = start; minute <= end; minute += timeIncrement) {
+			const hh = String(Math.floor(minute / 60)).padStart(2, "0");
+			const mm = String(minute % 60).padStart(2, "0");
+			times.push(`${hh}${mm}-${date}`);
+		}
+		Object.assign(event, {
+			dateTimes: event.times,
+			times,
+			type: "SPECIFIC_DATES_AND_TIMES",
+			timeIncrement,
+			timeRoundDate: `${date.slice(4, 8)}-${date.slice(2, 4)}-${date.slice(0, 2)}`,
+			updatedAt: new Date().toISOString(),
+		});
+		for (const answer of EVENT_USERS.filter(eu => eu.event.shortId === event.shortId)) {
+			answer.dateAvailable = answer.available;
+			answer.dateNotAvailable = answer.notAvailable;
+			answer.available = [];
+			answer.notAvailable = [];
+		}
+		return HttpResponse.json(toEventDto(event));
 	}),
 
 	// ── POST /events ──────────────────────────────────────────────────────────
