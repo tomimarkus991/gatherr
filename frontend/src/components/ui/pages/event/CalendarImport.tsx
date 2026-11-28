@@ -4,6 +4,7 @@ import { useGetBusySlots } from "../../../../hooks/mutation/useGetBusySlots";
 import { useRevokeCalendarAccess } from "../../../../hooks/mutation/useRevokeCalendarAccess";
 import { useListCalendars } from "../../../../hooks/query/useListCalendars";
 import { GatherrApiClient } from "../../../../lib/axios";
+import { rememberCalendarConnectReturn } from "../../../../lib/calendarConnectReturn";
 import { Button } from "../../button";
 
 interface Props {
@@ -32,6 +33,7 @@ export const CalendarImport = ({ shortId, onBusySlotsLoaded }: Props) => {
 		// A full-page navigation can't carry the bearer token, so fetch the consent URL first
 		// (it embeds a signed state naming the user), then send the browser to Google.
 		const { data } = await GatherrApiClient.get<{ url: string }>("/auth/google/calendar/url");
+		rememberCalendarConnectReturn(window.location.pathname);
 		window.location.href = data.url;
 	};
 
