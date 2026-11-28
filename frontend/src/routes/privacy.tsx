@@ -37,8 +37,8 @@ function PrivacyPolicy() {
 					</li>
 					<li>
 						<strong>Google Calendar connection.</strong> If you connect Google Calendar, we store
-						the access and refresh tokens Google gives us, so we can read your calendar when you ask
-						us to.
+						the access and refresh tokens Google gives us, so we can check your busy times when you
+						ask us to.
 					</li>
 				</ul>
 				<p>
@@ -50,16 +50,18 @@ function PrivacyPolicy() {
 			<LegalSection title="Google Calendar">
 				<ul className="list-disc pl-5 space-y-2">
 					<li>
-						We ask for read-only access (<code>calendar.readonly</code>). We never create, change or
-						delete anything in your calendar.
+						We ask for two narrow, read-only permissions: the list of your calendars (
+						<code>calendar.calendarlist.readonly</code>), so you can pick which ones to use, and
+						your free/busy times (<code>calendar.freebusy</code>). We cannot see your calendar
+						entries, their titles or their details, and we never create, change or delete anything
+						in your calendar.
 					</li>
 					<li>
-						We read your calendar only when you press "Import from Google Calendar", and only for
-						the calendars you pick and the event's date range.
+						We ask Google for your busy times only when you press "Import from Google Calendar", and
+						only for the calendars you pick and the event's date range.
 					</li>
 					<li>
-						We use only the start and end times of your calendar entries to work out which slots you
-						are busy. We do not store your calendar entries, their titles or their details.
+						We use those busy times to mark which slots you are busy, and we do not store them.
 					</li>
 					<li>
 						You can disconnect Google Calendar in Gatherr at any time, which deletes the stored
