@@ -1,17 +1,63 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 import { Link } from "@tanstack/react-router";
-import { EllipsisIcon, LogOutIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import {
+	CalendarCheckIcon,
+	CircleDotIcon,
+	ClockIcon,
+	EllipsisIcon,
+	LogOutIcon,
+	PencilIcon,
+	Trash2Icon,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { useDeleteEvent } from "../../../../hooks/mutation/useDeleteEvent";
 import { useLeaveEvent } from "../../../../hooks/mutation/useLeaveEvent";
 import { useGetMe } from "../../../../hooks/query/useGetMe";
 import { useGetMyEvents } from "../../../../hooks/query/useGetMyEvents";
+import { type EventStatus, eventStatus, formatCreatedDate } from "../../../../lib/eventStatus";
 import { cn } from "../../../../lib/utils";
 import { m } from "../../../../paraglide/messages";
+import { getLocale } from "../../../../paraglide/runtime";
 import { ScrollFadeIn } from "../../../animations/ScrollFadeIn";
 import { CopyLinkButton } from "../../CopyLinkButton";
 import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
+
+const STATUS = {
+	decided: {
+		icon: CalendarCheckIcon,
+		label: () => m.home_event_status_decided(),
+		color: "text-primary",
+	},
+	pickingTime: {
+		icon: ClockIcon,
+		label: () => m.home_event_status_picking_time(),
+		color: "text-content",
+	},
+	open: { icon: CircleDotIcon, label: () => m.home_event_status_open(), color: "text-info" },
+} satisfies Record<EventStatus, { icon: typeof ClockIcon; label: () => string; color: string }>;
+
+/** Status chip plus creation date, e.g. "Decided · Created Nov 12". */
+const EventMeta = ({ status, createdAt }: { status: EventStatus; createdAt?: string }) => {
+	const { icon: Icon, label, color } = STATUS[status];
+	const created = formatCreatedDate(createdAt, getLocale());
+	return (
+		<p className="flex items-center gap-1.5 text-xs mt-1" data-testid="event-meta">
+			<span className={cn("flex items-center gap-1 font-semibold", color)}>
+				<Icon className="size-3.5" aria-hidden />
+				{label()}
+			</span>
+			{created && (
+				<>
+					<span className="text-info" aria-hidden>
+						·
+					</span>
+					<span className="text-info">{m.home_event_created({ date: created })}</span>
+				</>
+			)}
+		</p>
+	);
+};
 
 /** The signed-in user's events; nothing without events (the home page shows the hero instead). */
 export const MyEvents = () => {
@@ -46,6 +92,7 @@ export const MyEvents = () => {
 												? m.home_event_waiting()
 												: m.home_event_responded({ count: event.respondedCount })}
 										</p>
+										<EventMeta status={eventStatus(event)} createdAt={event.createdAt} />
 									</div>
 
 									<div

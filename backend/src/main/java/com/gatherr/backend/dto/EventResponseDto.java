@@ -23,7 +23,8 @@ public record EventResponseDto(
         OffsetDateTime confirmedEnd,
         EventRound round,
         LocalDate timeRoundDate,
-        List<String> dateTimes
+        List<String> dateTimes,
+        OffsetDateTime createdAt
 ) {
     public static EventResponseDto from(Event event) {
         int respondedCount = event.getEventUsers() == null ? 0 : (int) event.getEventUsers().stream()
@@ -46,7 +47,8 @@ public record EventResponseDto(
                 event.getConfirmedEnd(),
                 event.getRound(),
                 event.getTimeRoundDate(),
-                event.getDateTimes()
+                event.getDateTimes(),
+                event.getCreatedAt()
         );
     }
 }

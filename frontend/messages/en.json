@@ -79,6 +79,10 @@
   "home_event_leave": "Leave",
   "home_event_left": "You left the event",
   "home_event_coming_soon": "Coming soon",
+  "home_event_created": "Created {date}",
+  "home_event_status_decided": "Decided",
+  "home_event_status_picking_time": "Picking a time",
+  "home_event_status_open": "Open",
   "home_total_events": [
     {
       "declarations": ["input count", "local countPlural = count: plural", "local countFormatted = count: number"],
