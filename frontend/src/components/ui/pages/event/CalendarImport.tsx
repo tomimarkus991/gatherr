@@ -108,9 +108,22 @@ export const CalendarImport = ({ shortId, onBusySlotsLoaded }: Props) => {
 
 	if (step === "picking" && isConnected) {
 		const calendars = calendarList?.calendars ?? [];
+		const allIds = calendars.map(cal => cal.id ?? "").filter(Boolean);
+		const allSelected = allIds.length > 0 && allIds.every(id => selectedIds.has(id));
 		return (
 			<div className="flex flex-col gap-3 p-4 bg-canvas rounded-xl">
-				<p className="text-sm font-semibold">Select calendars to import from:</p>
+				<div className="flex items-center justify-between gap-2">
+					<p className="text-sm font-semibold">Select calendars to import from:</p>
+					{allIds.length > 1 && (
+						<button
+							type="button"
+							className="text-xs text-info underline cursor-pointer shrink-0"
+							onClick={() => setSelectedIds(allSelected ? new Set() : new Set(allIds))}
+						>
+							{allSelected ? "Deselect all" : "Select all"}
+						</button>
+					)}
+				</div>
 
 				{calendars.length === 0 ? (
 					<p className="text-sm text-info">No calendars found in your Google account.</p>

@@ -189,7 +189,10 @@ public class GoogleCalendarService {
             }
         }
 
-        return new BusySlotsDto(overlappingSlots(slotWindows, busyWindows));
+        List<String> busySlots = overlappingSlots(slotWindows, busyWindows);
+        log.info("[GoogleCalendar] Busy import userId={} event={} calendars={} range={}..{} busyPeriods={} matchedSlots={}",
+                userId, shortId, calendarIds.size(), rangeStart, rangeEnd, busyWindows.size(), busySlots.size());
+        return new BusySlotsDto(busySlots);
     }
 
     /**
