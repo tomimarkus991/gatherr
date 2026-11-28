@@ -74,11 +74,11 @@ All `main` references are `origin/main` at `8b01e43`.
 | B7 | ...its look | **UI/UX only** | `CalendarImport.tsx:72-75` plain button with `CalendarDaysIcon`; native checkboxes `:120-125`; strings hard-coded English (`:74`, `:91`, `:111`, `:135`) vs the demo's Google-branded orange button and panel (`GoogleCalendarSync.tsx:76-122` on `final-demo`) | new |
 | B8 | Busy slots saved right after import | **partly done** | `HeatmapTabs.tsx:211-216` only removes busy slots from the local selection; nothing is saved until the user presses Save | new (with B9) |
 | B9 | Busy slots shown blocked; select-all/row/col skip them | **partly done** | `HeatmapTabs.tsx:174` "Select all" re-adds every slot including busy ones; cells have one look (`:335`, `:351`), no blocked state | new (with B8) |
-| B10 | Confirm final time and notify participants | **partly done** | Backend in open PR #92 (`POST /events/{shortId}/confirm`, `.ics` mail; `mergeable: CONFLICTING` per `gh pr view 92`). No frontend on `main`: no confirm control in `$shortId.tsx` or `HeatmapTabs.tsx`. Frontend is tracked by #50 (empty body). | **#92 + #50**, no new issue (see open question 3) |
+| B10 | Confirm final time and notify participants | **partly done** | Backend in open PR #92 (`POST /events/{shortId}/confirm`, `.ics` mail; `mergeable: CONFLICTING` per `gh pr view 92`). No frontend on `main`: no confirm control in `$shortId.tsx` or `HeatmapTabs.tsx`. Frontend is tracked by #50 (empty body). | **#92 + #50**, no new issue (see answered question 3) |
 | B11 | Demo mock dataset | **done** | `frontend/src/mocks/data.ts:5`, `:68`, `:162-166`, `:248-258` (ported in `cc3503d`) | none |
 | B11b | Calendar import and confirm in mock mode | **missing** | `frontend/src/mocks/handlers.ts` has no handler for `/users/me/calendars`, `/events/:shortId/calendar-busy`, `/auth/google/calendar/url` or `/events/:shortId/confirm` (grep found none). What MSW then does with those requests is unverified. | new |
 | B12 | Mock-mode sign-in bypass | **dropped** (dev shortcut) | `useGoogleAuth.ts:13` on `main` falls back to `login(undefined)` only when no client ID is set | none |
-| B13 | LAN/ngrok dev server, devtools hidden | **dropped** (demo-only) | `frontend/vite.config.ts` has no `server` block; devtools on (`__root.tsx:130`) | none (open question 4) |
+| B13 | LAN/ngrok dev server, devtools hidden | **dropped** (demo-only) | `frontend/vite.config.ts` has no `server` block; devtools on (`__root.tsx:130`) | none (answered question 4) |
 | B14 | Button variants | **done** | `button.tsx:9-10` | none |
 
 Related work the demo did not show but `main` has: leave event (`frontend/src/components/ui/pages/home/MyEvents.tsx:19`, `:81`, #90), heatmap for all four event types (#91). The two-step date-then-time flow is #94; the demo renamed "Dates and times" to "Dates" (`en.json:19` on both branches) but has no two-step flow, so nothing here overlaps #94.
@@ -149,13 +149,15 @@ No new issue. Proposed acceptance criteria for #50, for the author to adopt:
 - Random busy slots and `MOCK_CALENDARS` inside a product component (replaced by the real `CalendarImport` and, for mock mode, G4).
 - Mock-mode Google sign-in bypass, ngrok host, `basic-ssl`, devtools commented out.
 
-## Open questions
+## Answered questions
 
-1. **Auto-save on import (G2).** The demo saves straight after import. `main` only changes the local selection and waits for Save. Which one?
-2. **Persist blocked slots (G2).** Should the blocked state survive a reload or another device? If yes, it needs a backend change (a separate busy list or a third state per slot), because `notAvailable` currently means "not selected".
-3. **#50.** Should #50 get the confirm-UI acceptance criteria above and become a sub-issue of the spec parent, instead of a new issue?
-4. **Phone testing over HTTPS.** Is a `dev:lan` script (Vite `host: true` + `basic-ssl`) worth adding so `navigator.share` can be tested on a phone? Not created as an issue.
-5. **Calendar import wording (G3).** "Sync Google Calendar" (demo) or "Import from Google Calendar" (`main`)? "Sync" suggests it stays in sync, which it does not.
+Questions 1–4 were answered by the owner during triage; 5 stayed as built.
+
+1. **Auto-save on import (G2).** Yes: an import saves straight away, with a toast ([#98](https://github.com/tomimarkus991/gatherr/issues/98), built in #114).
+2. **Persist blocked slots (G2).** No: the blocked state lasts for the page session only and the next import replaces it ([#98](https://github.com/tomimarkus991/gatherr/issues/98)).
+3. **#50.** Yes: #50 was rewritten with the confirm-UI criteria, made a sub-issue of #95, and built in #123.
+4. **Phone testing over HTTPS.** Yes: `npm run dev:lan` ([#116](https://github.com/tomimarkus991/gatherr/issues/116), built in #119).
+5. **Calendar import wording (G3).** "Import from Google Calendar", as on `main` (`calendar_import_button`).
 
 ## Unverified
 
