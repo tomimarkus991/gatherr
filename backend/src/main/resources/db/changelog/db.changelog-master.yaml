@@ -309,3 +309,11 @@ databaseChangeLog:
               - column:
                   name: confirmed_end
                   type: TIMESTAMP WITH TIME ZONE
+
+  # 9. DROP PLAIN-TEXT GOOGLE TOKENS (tokens are now stored encrypted; users reconnect their calendar)
+  - changeSet:
+      id: 009-delete-plaintext-google-tokens
+      author: gatherr
+      changes:
+        - delete:
+            tableName: user_google_tokens
