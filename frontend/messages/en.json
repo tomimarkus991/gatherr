@@ -66,5 +66,6 @@
   "copy_link_copied": "Link copied!",
   "google_sign_in_failed": "Google sign-in failed",
   "share_link": "Share link",
-  "footer_privacy": "Privacy policy"
+  "footer_privacy": "Privacy policy",
+  "footer_terms": "Terms of service"
 }

@@ -38,9 +38,12 @@ function App() {
 					</Button>
 				</div>
 			</div>
-			<footer className="text-center pb-8">
+			<footer className="flex flex-row justify-center gap-6 pb-8">
 				<Link to="/privacy" className="text-info text-sm underline">
 					{m.footer_privacy()}
+				</Link>
+				<Link to="/terms" className="text-info text-sm underline">
+					{m.footer_terms()}
 				</Link>
 			</footer>
 		</main>
