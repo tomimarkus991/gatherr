@@ -29,3 +29,17 @@ test("signed in, the total events counter celebrates at the bottom of the home p
 	expect(counterBox && createBox && counterBox.y > createBox.y).toBe(true);
 	expect(counterBox && footerBox && counterBox.y + counterBox.height <= footerBox.y).toBe(true);
 });
+
+test("signed out, the same celebrating counter sits under the create card", async ({ page }) => {
+	await page.goto("/");
+
+	const counter = page.getByTestId("total-events-count");
+	await expect(counter).toHaveCount(1);
+	await counter.scrollIntoViewIfNeeded();
+	await expect(counter).toContainText("events created so far");
+	await expect(counter.locator("p.font-number")).toBeVisible();
+
+	const counterBox = await counter.boundingBox();
+	const createBox = await page.getByRole("button", { name: "Create event", exact: true }).boundingBox();
+	expect(counterBox && createBox && counterBox.y > createBox.y).toBe(true);
+});

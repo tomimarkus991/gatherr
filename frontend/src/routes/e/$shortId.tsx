@@ -23,6 +23,7 @@ import { useGoogleAuth } from "../../hooks/mutation/useGoogleAuth";
 import { useRespondToEvent } from "../../hooks/mutation/useRespondToEvent";
 import { useGetEvent } from "../../hooks/query/useGetEvent";
 import { useGetMe } from "../../hooks/query/useGetMe";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { cn } from "../../lib/utils";
 import { m } from "../../paraglide/messages";
 
@@ -38,6 +39,7 @@ function RouteComponent() {
 	const { fromCreate } = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
 	const { data: event, isLoading } = useGetEvent(shortId);
+	useDocumentTitle(event?.details.name);
 	const { data: me } = useGetMe();
 	const handleLogin = useGoogleAuth();
 	const { mutate: respond, isPending: isSaving } = useRespondToEvent(shortId);
@@ -86,7 +88,7 @@ function RouteComponent() {
 					{me && event.details.creatorId === me.id && (
 						<Button
 							size="xs"
-							variant="dark"
+							variant="gray"
 							className="shrink-0"
 							onClick={() => setIsEditOpen(true)}
 						>

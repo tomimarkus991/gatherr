@@ -80,7 +80,7 @@ export const CalendarImport = ({ shortId, onBusySlotsLoaded }: Props) => {
 	if (step === "idle") {
 		return (
 			<div className="mb-8">
-				<Button size="sm" variant="dark" className="gap-2" onClick={handleImportClick}>
+				<Button size="sm" variant="gray" className="gap-2" onClick={handleImportClick}>
 					<GoogleIcon className="size-4" />
 					{m.calendar_import_button()}
 				</Button>

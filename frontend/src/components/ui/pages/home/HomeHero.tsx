@@ -5,7 +5,6 @@ import { animations } from "../../../animations/anim-constants";
 import { LetterDecryptor } from "../../LetterDecryptor";
 import marble from "../../shader/molten-marble.frag?raw";
 import { ShaderCanvas } from "../../shader/ShaderCanvas";
-import { TotalEventsCount } from "./TotalEventsCount";
 
 /** Shown under the shader, and instead of it when WebGL is unavailable (design-library hero fallback). */
 const HERO_FALLBACK = [
@@ -61,7 +60,6 @@ export const HomeHero = ({ children }: Props) => (
 			</p>
 			<AnimationWrapper variants={animations.pageItems.fadeInFromBottom}>
 				<p className="text-info max-w-xs text-center m-auto">{m.home_hero_text()}</p>
-				<TotalEventsCount className="text-info text-sm text-center mt-4" />
 			</AnimationWrapper>
 		</div>
 	</FlameBackground>

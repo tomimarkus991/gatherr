@@ -66,7 +66,7 @@ export const ShareLinkPanel = ({ shortId, eventName, className }: Props) => {
 							target="_blank"
 							rel="noopener noreferrer"
 							aria-label={label}
-							className={buttonVariants({ variant: "dark", size: "small" })}
+							className={buttonVariants({ variant: "gray", size: "small" })}
 						>
 							<Icon className="size-6" />
 						</a>
