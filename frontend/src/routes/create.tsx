@@ -28,6 +28,7 @@ import {
 import { useCreateEvent } from "../hooks/mutation/useCreateEvent";
 import { useGoogleAuth } from "../hooks/mutation/useGoogleAuth";
 import { useGetMe } from "../hooks/query/useGetMe";
+import { timeIncrementSlots } from "../lib/timeIncrementExample";
 import type { EventType } from "../mocks/types";
 import * as m from "../paraglide/messages";
 
@@ -127,6 +128,8 @@ function Create() {
 		});
 	}, [eventType, calendarSelectedDates, selectedDays, startTime, endTime, timeIncrement, timezone]);
 
+	const hasTimes = eventType === "SPECIFIC_DATES_AND_TIMES" || eventType === "WEEKDAYS_AND_TIMES";
+
 	/**
 	 * Calculates the times array based on the event type:
 	 *
@@ -193,7 +196,7 @@ function Create() {
 				setEventType={setEventType}
 			/>
 			<div>
-				{(eventType === "SPECIFIC_DATES_AND_TIMES" || eventType === "WEEKDAYS_AND_TIMES") && (
+				{hasTimes && (
 					<>
 						<ComponentExplainer
 							title={m.create_pick_time_range_title()}
@@ -235,44 +238,18 @@ function Create() {
 										</SelectContent>
 									</Select>
 								</div>
-								<p className="text-sm text-info">{m.create_time_increment_description()}</p>
-							</div>
-
-							{/* times on or off */}
-							<div className="flex flex-col justify-start mb-4">
-								{eventType === "SPECIFIC_DATES_AND_TIMES" || eventType === "WEEKDAYS_AND_TIMES" ? (
-									<>
-										<p className="text-info text-sm mb-2">{m.create_remove_time_ranges_hint()}</p>
-										<Button
-											className="self-start"
-											onClick={() =>
-												setEventType(
-													eventType === "SPECIFIC_DATES_AND_TIMES" ? "SPECIFIC_DATES" : "WEEKDAYS",
-												)
-											}
-											variant="red"
-											size="xs"
-										>
-											{m.create_remove_time_ranges()}
-										</Button>
-									</>
-								) : (
-									<>
-										<p className="text-info text-sm mb-2">{m.create_add_time_ranges_hint()}</p>
-										<Button
-											className="self-start"
-											onClick={() =>
-												setEventType(
-													eventType === "SPECIFIC_DATES"
-														? "SPECIFIC_DATES_AND_TIMES"
-														: "WEEKDAYS_AND_TIMES",
-												)
-											}
-											size="xs"
-										>
-											{m.create_add_time_ranges()}
-										</Button>
-									</>
+								{hasTimes && (
+									<p className="text-sm text-info">
+										{m.create_time_increment_example({
+											increment: timeIncrement,
+											slots: timeIncrementSlots({
+												startHour: startTime,
+												endHour: endTime,
+												increment: timeIncrement,
+												timeFormat24: user?.timeFormat24 ?? true,
+											}),
+										})}
+									</p>
 								)}
 							</div>
 

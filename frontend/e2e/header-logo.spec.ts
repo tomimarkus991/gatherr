@@ -23,3 +23,9 @@ test("logo shows top left on phone width without horizontal scroll", async ({ pa
 	expect(box?.y).toBeLessThan(60);
 	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
 });
+
+test("logo on the create page goes home", async ({ page }) => {
+	await page.goto("/create?name=Test");
+	await page.getByRole("link", { name: "Gatherr home" }).click();
+	await expect(page).toHaveURL(/\/$/);
+});
