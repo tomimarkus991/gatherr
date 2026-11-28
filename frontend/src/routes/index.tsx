@@ -15,7 +15,6 @@ export const Route = createFileRoute("/")({ component: App });
 function App() {
 	// Kept here, not in the card: the card moves into the flame once events load, and a typed name must survive that
 	const [name, setName] = useState("");
-	// Signed in with events: the counter moves from under the hero to its own card at the bottom
 	const { data: myEvents, isLoading } = useGetMyEvents();
 	const hasEvents = !!myEvents?.length;
 	// Without events (or while they load) the hero shows instead of the event list
@@ -40,11 +39,9 @@ function App() {
 				)}
 				<div className="m-auto max-w-md">
 					{showHero && <CreateEventCard name={name} onNameChange={setName} />}
-					{hasEvents && (
-						<ScrollFadeIn from="right">
-							<TotalEventsCount variant="celebrate" />
-						</ScrollFadeIn>
-					)}
+					<ScrollFadeIn from="right">
+						<TotalEventsCount variant="celebrate" />
+					</ScrollFadeIn>
 				</div>
 			</div>
 			<footer className="flex flex-row justify-center gap-6 pb-8">
