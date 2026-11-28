@@ -257,11 +257,23 @@ export interface components {
 			name: string;
 			description?: string;
 			/** @enum {string} */
-			type: "SPECIFIC_DATES_AND_TIMES" | "SPECIFIC_DATES" | "WEEKDAYS" | "WEEKDAYS_AND_TIMES";
+			type:
+				| "SPECIFIC_DATES_AND_TIMES"
+				| "SPECIFIC_DATES"
+				| "WEEKDAYS"
+				| "WEEKDAYS_AND_TIMES"
+				| "DATE_RANGES";
 			times: string[];
 			timezone: string;
 			/** Format: int32 */
 			timeIncrement: number;
+			rangeDetails?: {
+				[key: string]: components["schemas"]["RangeDetail"];
+			};
+		};
+		RangeDetail: {
+			label?: string;
+			link?: string;
 		};
 		EventResponseDto: {
 			/** Format: int64 */
@@ -272,7 +284,12 @@ export interface components {
 			/** Format: int64 */
 			creatorId?: number;
 			/** @enum {string} */
-			type?: "SPECIFIC_DATES_AND_TIMES" | "SPECIFIC_DATES" | "WEEKDAYS" | "WEEKDAYS_AND_TIMES";
+			type?:
+				| "SPECIFIC_DATES_AND_TIMES"
+				| "SPECIFIC_DATES"
+				| "WEEKDAYS"
+				| "WEEKDAYS_AND_TIMES"
+				| "DATE_RANGES";
 			times?: string[];
 			/** Format: int32 */
 			timeIncrement?: number;
@@ -290,6 +307,9 @@ export interface components {
 			/** Format: date */
 			timeRoundDate?: string;
 			dateTimes?: string[];
+			rangeDetails?: {
+				[key: string]: components["schemas"]["RangeDetail"];
+			};
 			/** Format: date-time */
 			createdAt?: string;
 		};

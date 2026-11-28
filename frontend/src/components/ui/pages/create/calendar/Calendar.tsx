@@ -42,12 +42,14 @@ const currentMonthType = "MMMM yyyy";
 
 interface Props {
 	selected: Date[];
-	setSelected: React.Dispatch<React.SetStateAction<Date[]>>;
+	setSelected?: React.Dispatch<React.SetStateAction<Date[]>>;
+	/** Range mode (trip events): a tap calls this instead of toggling the day, and week buttons are hidden. */
+	onDateClick?: (date: Date) => void;
 }
 
 const weekPrefix = getLocale() === "et" ? "N" : "W";
 
-export const Calendar = ({ selected, setSelected }: Props) => {
+export const Calendar = ({ selected, setSelected, onDateClick }: Props) => {
 	const { data: me } = useGetMe();
 
 	const [isAnimating, setIsAnimating] = useState(false);
@@ -170,7 +172,11 @@ export const Calendar = ({ selected, setSelected }: Props) => {
 						const dateStr = el?.closest("[data-date]")?.getAttribute("data-date");
 						if (!dateStr) return;
 						const date = new Date(dateStr);
-						setSelected(prev => {
+						if (onDateClick) {
+							onDateClick(date);
+							return;
+						}
+						setSelected?.(prev => {
 							const isAlreadySelected = prev.some(d => d.getTime() === date.getTime());
 							if (isAlreadySelected) return prev.filter(d => d.getTime() !== date.getTime());
 							return [...prev, date];
@@ -192,33 +198,37 @@ export const Calendar = ({ selected, setSelected }: Props) => {
 								key={week.toISOString()}
 								className={cn("grid grid-cols-[2rem_repeat(7,1fr)] gap-0.5 h-10")}
 							>
-								<Button
-									variant="dark"
-									type="button"
-									size="xs"
-									className={cn(
-										"mr-4 text-[0.6rem] font-medium border-b-4",
-										futureDays.length === 0 && "opacity-30 cursor-default",
-									)}
-									disabled={futureDays.length === 0}
-									onClick={() => {
-										if (allFutureSelected) {
-											setSelected(prev =>
-												prev.filter(d => !futureDays.some(fd => fd.getTime() === d.getTime())),
-											);
-										} else {
-											setSelected(prev => {
-												const toAdd = futureDays.filter(
-													d => !prev.some(s => s.getTime() === d.getTime()),
+								{onDateClick ? (
+									<div />
+								) : (
+									<Button
+										variant="dark"
+										type="button"
+										size="xs"
+										className={cn(
+											"mr-4 text-[0.6rem] font-medium border-b-4",
+											futureDays.length === 0 && "opacity-30 cursor-default",
+										)}
+										disabled={futureDays.length === 0}
+										onClick={() => {
+											if (allFutureSelected) {
+												setSelected?.(prev =>
+													prev.filter(d => !futureDays.some(fd => fd.getTime() === d.getTime())),
 												);
-												return [...prev, ...toAdd];
-											});
-										}
-									}}
-								>
-									{weekPrefix}
-									{getISOWeek(week)}
-								</Button>
+											} else {
+												setSelected?.(prev => {
+													const toAdd = futureDays.filter(
+														d => !prev.some(s => s.getTime() === d.getTime()),
+													);
+													return [...prev, ...toAdd];
+												});
+											}
+										}}
+									>
+										{weekPrefix}
+										{getISOWeek(week)}
+									</Button>
+								)}
 								{daysForWeek.map(day => (
 									<CalendarDate
 										key={day.toISOString()}

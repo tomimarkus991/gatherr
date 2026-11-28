@@ -24,6 +24,7 @@ import java.util.Map;
  * SPECIFIC_DATES            ddMMyyyy       "31032026"       (all day)
  * WEEKDAYS_AND_TIMES        HHmm-DDD       "0900-MON"
  * WEEKDAYS                  DDD            "MON"            (all day)
+ * DATE_RANGES               ddMMyyyy-ddMMyyyy "01122026-03122026" (all day, first to last day)
  * </pre>
  *
  * Weekday slots have no date, so they map to the next occurrence of that weekday,
@@ -68,6 +69,11 @@ public final class SlotTimes {
                     yield timed(start, incrementMinutes);
                 }
                 case WEEKDAYS -> allDay(nextOrSame(LocalDate.now(clock.withZone(zone)), slot), zone);
+                case DATE_RANGES -> {
+                    DateRange range = DateRange.parse(slot);
+                    yield new ConfirmedSlot(range.start().atStartOfDay(zone),
+                            range.end().plusDays(1).atStartOfDay(zone), true);
+                }
             };
         } catch (DateTimeException | IllegalArgumentException e) {
             throw invalid(slot);

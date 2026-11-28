@@ -229,6 +229,21 @@ export const OLIVERS_TIME_ROUND_EVENT: Event = {
 	dateTimes: ["07122026", "08122026"],
 };
 
+/** A trip by Oliver (#148): Mon 14 – Fri 18 Dec is the best range (2 of 2). */
+export const OLIVERS_TRIP_EVENT: Event = {
+	...TEAM_TRIP_EVENT,
+	id: 33,
+	name: "Oliver's Rome trip",
+	shortId: "olivers-trip",
+	creator: USERS[1],
+	type: "DATE_RANGES",
+	times: ["01122026-03122026", "14122026-18122026", "23122026-26122026"],
+	rangeDetails: {
+		"01122026-03122026": { label: "Rome, Ryanair €89", link: "https://www.ryanair.com" },
+		"14122026-18122026": { label: "Rome, airBaltic €120" },
+	},
+};
+
 export const EVENTS: Event[] = [
 	GATHER_EVENT,
 	DEMO_EVENT,
@@ -242,6 +257,7 @@ export const EVENTS: Event[] = [
 	TEAM_TRIP_EVENT,
 	OLIVERS_DAY_VOTE_EVENT,
 	OLIVERS_TIME_ROUND_EVENT,
+	OLIVERS_TRIP_EVENT,
 ];
 
 // ─── EventUsers (availability responses) ─────────────────────────────────────
@@ -351,6 +367,14 @@ export const EVENT_USERS: EventUser[] = [
 		notAvailable: [],
 		dateAvailable: ["08122026"],
 		dateNotAvailable: ["07122026"],
+	}),
+	makeEventUser(37, OLIVERS_TRIP_EVENT, USERS[1], {
+		available: ["14122026-18122026"],
+		notAvailable: ["01122026-03122026", "23122026-26122026"],
+	}),
+	makeEventUser(38, OLIVERS_TRIP_EVENT, USERS[2], {
+		available: ["01122026-03122026", "14122026-18122026"],
+		notAvailable: ["23122026-26122026"],
 	}),
 ];
 

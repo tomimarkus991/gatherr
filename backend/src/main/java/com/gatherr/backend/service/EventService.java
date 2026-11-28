@@ -7,6 +7,7 @@ import com.gatherr.backend.dto.StartTimeRoundDto;
 import com.gatherr.backend.dto.UpdateEventDto;
 import com.gatherr.backend.model.Event;
 import com.gatherr.backend.model.EventUser;
+import com.gatherr.backend.model.RangeDetail;
 import com.gatherr.backend.model.User;
 import com.gatherr.backend.model.enums.EventRound;
 import com.gatherr.backend.model.enums.EventType;
@@ -15,6 +16,7 @@ import com.gatherr.backend.repository.EventUserRepository;
 import com.gatherr.backend.repository.UserRepository;
 import com.gatherr.backend.util.ConfirmedSlot;
 import com.gatherr.backend.util.SlotTimes;
+import com.gatherr.backend.util.TripRanges;
 import com.gatherr.backend.util.WordConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -34,6 +36,7 @@ import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -59,6 +62,13 @@ public class EventService {
         User creator = userRepository.findById(creatorId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + creatorId));
 
+        Map<String, RangeDetail> rangeDetails = null;
+        if (dto.getType() == EventType.DATE_RANGES) {
+            rangeDetails = TripRanges.validate(dto.getTimes(), dto.getRangeDetails());
+        } else if (dto.getRangeDetails() != null && !dto.getRangeDetails().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Range details are only for trip events");
+        }
+
         Event event = Event.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
@@ -67,6 +77,7 @@ public class EventService {
                 .timezone(dto.getTimezone())
                 .shortId(generateUniqueShortId())
                 .timeIncrement(dto.getTimeIncrement())
+                .rangeDetails(rangeDetails)
                 .creator(creator)
                 .build();
         

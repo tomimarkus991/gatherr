@@ -1,11 +1,13 @@
 package com.gatherr.backend.dto;
 
 import com.gatherr.backend.model.Event;
+import com.gatherr.backend.model.RangeDetail;
 import com.gatherr.backend.model.enums.EventRound;
 import com.gatherr.backend.model.enums.EventType;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 
 public record EventResponseDto(
         Long id,
@@ -24,6 +26,7 @@ public record EventResponseDto(
         EventRound round,
         LocalDate timeRoundDate,
         List<String> dateTimes,
+        Map<String, RangeDetail> rangeDetails,
         OffsetDateTime createdAt
 ) {
     public static EventResponseDto from(Event event) {
@@ -48,6 +51,7 @@ public record EventResponseDto(
                 event.getRound(),
                 event.getTimeRoundDate(),
                 event.getDateTimes(),
+                event.getRangeDetails(),
                 event.getCreatedAt()
         );
     }

@@ -2,7 +2,9 @@ export type EventType =
 	| "SPECIFIC_DATES_AND_TIMES"
 	| "SPECIFIC_DATES"
 	| "WEEKDAYS"
-	| "WEEKDAYS_AND_TIMES";
+	| "WEEKDAYS_AND_TIMES"
+	/** Trip: slots are date ranges "DDMMYYYY-DDMMYYYY" (issue #148). */
+	| "DATE_RANGES";
 
 export interface User {
 	id: number;
@@ -38,6 +40,8 @@ export interface Event {
 	timeRoundDate?: string;
 	/** The date round's dates ("DDMMYYYY"), kept once the time round starts. */
 	dateTimes?: string[];
+	/** Trip events: optional label and link per range key. */
+	rangeDetails?: Record<string, { label?: string; link?: string }>;
 	createdAt: string; // ISO 8601
 	updatedAt: string; // ISO 8601
 }

@@ -78,6 +78,18 @@ class IcsBuilderTest {
     }
 
     @Test
+    void tripRange_isOneAllDayEvent_fromFirstDayToTheDayAfterTheLastDay() {
+        ConfirmedSlot slot = SlotTimes.resolve(com.gatherr.backend.model.enums.EventType.DATE_RANGES,
+                "14122026-18122026", TALLINN, 30, java.time.Clock.fixed(DTSTAMP, TALLINN));
+
+        String ics = IcsBuilder.build(event, slot, List.of(participant), DTSTAMP);
+
+        assertThat(ics).contains("\r\nDTSTART;VALUE=DATE:20261214\r\n");
+        assertThat(ics).contains("\r\nDTEND;VALUE=DATE:20261219\r\n");
+        assertThat(ics).doesNotContain("DTSTART:");
+    }
+
+    @Test
     void textAndParameterValuesAreEscaped() {
         event.setName("Lunch; drinks, and\nmore \\ fun");
         organiser.setName("Doe, Jane");
