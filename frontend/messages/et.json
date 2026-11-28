@@ -88,6 +88,16 @@
             }
         }
     ],
+    "home_total_events_label": [
+        {
+            "declarations": ["input count", "local countPlural = count: plural"],
+            "selectors": ["countPlural"],
+            "match": {
+                "countPlural=one": "üritus on seni loodud",
+                "countPlural=other": "üritust on seni loodud"
+            }
+        }
+    ],
     "user_settings_sign_in_to_save": "Logi sisse seadete salvestamiseks",
     "create_event_calendar_date_disabled": "Sa ei saa valida minevikus olevat kuupäeva",
     "copy_link_copied": "Link kopeeritud!",
