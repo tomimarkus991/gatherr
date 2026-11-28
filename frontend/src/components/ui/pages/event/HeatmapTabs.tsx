@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <explanation> */
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 import { addDays, format, startOfWeek } from "date-fns";
-import { BanIcon, CheckIcon, PenBoxIcon, PencilIcon, XIcon } from "lucide-react";
+import { BanIcon, CheckIcon, PenBoxIcon, PencilIcon, UsersIcon, XIcon } from "lucide-react";
 import { motion, type Variants } from "motion/react";
 import { useRef, useState } from "react";
 import toast from "react-hot-toast";
@@ -29,6 +29,7 @@ import { dateFnsLocale } from "../create/calendar/Calendar";
 import { BlockedSlotDialog, BlockedSlotTooltip } from "./BlockedSlot";
 import { type BusySlotDetail, CalendarImport } from "./CalendarImport";
 import { ConfirmSlotButton } from "./ConfirmSlotButton";
+import { HeatmapScroll } from "./HeatmapScroll";
 
 interface TwoElementMovingBoxProps {
 	selectedIndex: number;
@@ -177,33 +178,27 @@ export const HeatmapTabs = ({
 	// Slots that exist in the event; grid positions without one (e.g. after a timezone shift) stay empty.
 	const slotAt = (time: string | null, day: string) => displayToSlot.get(joinSlot(time, day));
 
-	const toggleRow = (displayTime: string | null) => {
-		const rowSlots = heatMapDates
-			.map(date => slotAt(displayTime, date))
-			.filter((slot): slot is string => !!slot && !blocked.has(slot));
-		const allSelected = rowSlots.every(slot => selectedSlots.includes(slot));
+	const isSlot = (slot: string | undefined): slot is string => !!slot;
+	const rowSlots = (displayTime: string | null) =>
+		heatMapDates.map(date => slotAt(displayTime, date)).filter(isSlot);
+	const columnSlots = (displayDate: string) =>
+		heatMapTimes.map(time => slotAt(time, displayDate)).filter(isSlot);
+	/** Every slot in the line is marked. A blocked slot is never marked, so its line is never full. */
+	const isFull = (slots: string[]) =>
+		slots.length > 0 && slots.every(slot => selectedSlots.includes(slot));
+
+	/** Marks every unblocked slot in the line, or unmarks them when they are all marked already. */
+	const toggleLine = (slots: string[]) => {
+		const open = slots.filter(slot => !blocked.has(slot));
+		const allSelected = open.every(slot => selectedSlots.includes(slot));
 		setSelectedSlots(prev =>
-			allSelected
-				? prev.filter(slot => !rowSlots.includes(slot))
-				: [...new Set([...prev, ...rowSlots])],
+			allSelected ? prev.filter(slot => !open.includes(slot)) : [...new Set([...prev, ...open])],
 		);
 	};
 
-	const toggleColumn = (displayDate: string) => {
-		const colSlots = heatMapTimes
-			.map(time => slotAt(time, displayDate))
-			.filter((slot): slot is string => !!slot && !blocked.has(slot));
-		const allSelected = colSlots.every(slot => selectedSlots.includes(slot));
-		setSelectedSlots(prev =>
-			allSelected
-				? prev.filter(slot => !colSlots.includes(slot))
-				: [...new Set([...prev, ...colSlots])],
-		);
-	};
-
-	const handleSelectAll = () =>
-		setSelectedSlots((event?.details.times ?? []).filter(slot => !blocked.has(slot)));
-	const handleDeselectAll = () => setSelectedSlots([]);
+	const selectableSlots = (event?.details.times ?? []).filter(slot => !blocked.has(slot));
+	const allSelected = isFull(selectableSlots);
+	const toggleAll = () => setSelectedSlots(allSelected ? [] : selectableSlots);
 
 	/** Tap or drag over a cell, or a confirmed blocked cell. Selecting a blocked cell unblocks it. */
 	const toggleSlot = (slot: string) => {
@@ -301,27 +296,18 @@ export const HeatmapTabs = ({
 					)}
 
 					{me && (
-						<div className="flex flex-row gap-2 mb-3 justify-center">
-							<Button size="xs" onClick={handleSelectAll}>
-								{m.event_select_all()}
-							</Button>
-							<Button size="xs" variant="red" onClick={handleDeselectAll}>
-								{m.event_deselect_all()}
-							</Button>
-							<Button
-								size="xs"
-								onClick={() => {
-									onSave();
-									setPreferredIndex(1);
-								}}
-								disabled={isSaving}
+						<div className="flex justify-center mb-3">
+							<button
+								type="button"
+								className="text-sm text-info underline cursor-pointer"
+								onClick={toggleAll}
 							>
-								{m.event_save()}
-							</Button>
+								{allSelected ? m.event_deselect_all() : m.event_select_all()}
+							</button>
 						</div>
 					)}
 
-					<div className="overflow-x-auto w-full mb-28">
+					<HeatmapScroll className={me ? "mb-6" : "mb-28"}>
 						<div
 							className="p-4 bg-canvas rounded-2xl w-max mx-auto"
 							style={{ touchAction: isSelectMode && isMobile ? "none" : "auto" }}
@@ -358,9 +344,10 @@ export const HeatmapTabs = ({
 							<div className="flex flex-row mb-6">
 								{hasTimes && <div className="w-16 shrink-0 mb-6" />}
 								{heatMapDates.map(heatMapDate => {
+									const full = isFull(columnSlots(heatMapDate));
 									return (
 										<Button
-											variant="dark"
+											variant={full ? "orange" : "dark"}
 											type="button"
 											size="xs"
 											className={cn(
@@ -368,7 +355,9 @@ export const HeatmapTabs = ({
 												me ? "cursor-pointer" : "cursor-default pointer-events-none opacity-50",
 											)}
 											key={heatMapDate}
-											onClick={() => toggleColumn(heatMapDate)}
+											data-column={heatMapDate}
+											data-full={full}
+											onClick={() => toggleLine(columnSlots(heatMapDate))}
 										>
 											<DayLabel day={heatMapDate} small />
 										</Button>
@@ -383,14 +372,15 @@ export const HeatmapTabs = ({
 										{/* time on the left */}
 										{heatMapTime && (
 											<Button
-												variant="dark"
+												variant={isFull(rowSlots(heatMapTime)) ? "orange" : "dark"}
+												data-full={isFull(rowSlots(heatMapTime))}
 												type="button"
 												size="xs"
 												className={cn(
 													"absolute -mt-3! px-2 py-1 rounded-2xl z-50",
 													me ? "cursor-pointer" : "cursor-default pointer-events-none opacity-50",
 												)}
-												onClick={() => toggleRow(heatMapTime)}
+												onClick={() => toggleLine(rowSlots(heatMapTime))}
 											>
 												{formatTime(heatMapTime)}
 											</Button>
@@ -473,14 +463,29 @@ export const HeatmapTabs = ({
 								))}
 							</div>
 						</div>
-					</div>
+					</HeatmapScroll>
+
+					{me && (
+						<div className="flex justify-center mb-28">
+							<Button
+								size="sm"
+								onClick={() => {
+									onSave();
+									setPreferredIndex(1);
+								}}
+								disabled={isSaving}
+							>
+								{m.event_save()}
+							</Button>
+						</div>
+					)}
 				</TabsContent>
 
 				{/* group availability tab */}
 				<TabsContent value="group">
 					<div className="mb-6">
 						<div className="flex flex-row items-start">
-							<GradientIcon icon={PenBoxIcon} className="size-6 mr-2.5" />
+							<GradientIcon icon={UsersIcon} className="size-6 mr-2.5" />
 							<div>
 								<p className="text-lg">{m.event_group_availability_title()}</p>
 								<p className="text-info text-sm">{m.event_group_availability_text()}</p>
@@ -488,7 +493,7 @@ export const HeatmapTabs = ({
 						</div>
 					</div>
 
-					<div className="overflow-x-auto w-full mb-6">
+					<HeatmapScroll className="mb-6">
 						<div className="p-4 bg-canvas rounded-2xl w-max mx-auto">
 							{/* date headers */}
 							<div className="flex flex-row">
@@ -582,7 +587,7 @@ export const HeatmapTabs = ({
 								))}
 							</div>
 						</div>
-					</div>
+					</HeatmapScroll>
 				</TabsContent>
 			</Tabs>
 
