@@ -7,7 +7,9 @@ npm run generate:schema && echo "Schema fetched from backend" || echo "Backend n
 
 # Regenerate types from schema.json
 npm run generate:types && echo "TypeScript types updated"
-git add schema.json src/api/types.gen.ts
+# Hooks in a git worktree run with GIT_DIR set, which makes git treat the
+# current directory as the repo root. Stage from the real root instead.
+git -C .. add frontend/schema.json frontend/src/api/types.gen.ts
 
 # Linting/formatting
 echo "🧼 Running linting and formatting..."
