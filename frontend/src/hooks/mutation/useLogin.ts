@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { components } from "../../api/types.gen";
+import { setToken } from "../../lib/authToken";
 import { GatherrApiClient } from "../../lib/axios";
 
 type AuthResponse = components["schemas"]["AuthResponseDto"];
@@ -16,7 +17,7 @@ export const useLogin = () => {
 			return data;
 		},
 		onSuccess: data => {
-			localStorage.setItem("token", data.token ?? "");
+			setToken(data.token ?? null);
 			queryClient.setQueryData(["/users/me"], {
 				id: data.id,
 				name: data.name,

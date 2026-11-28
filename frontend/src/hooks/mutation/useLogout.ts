@@ -1,10 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
+import { setToken } from "../../lib/authToken";
 
 export const useLogout = () => {
 	const queryClient = useQueryClient();
 	return useCallback(() => {
-		localStorage.removeItem("token");
+		setToken(null);
 		queryClient.resetQueries();
 	}, [queryClient]);
 };

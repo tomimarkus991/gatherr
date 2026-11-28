@@ -13,6 +13,7 @@ import {
 	makeEventUser,
 	setCalendarConnected,
 	shortId,
+	USERS,
 } from "./data";
 import type {
 	Event,
@@ -115,16 +116,19 @@ function confirmedRange(event: Event, slot: string): { start: string; end: strin
 const toEventDto = (event: Event) => ({ ...event, creatorId: event.creator.id });
 
 // ── Auth state ───────────────────────────────────────────────────────────────
-let isLoggedIn = false;
-const activeUser: User = ME;
+let activeUser: User = ME;
 
 // IMPORTANT: MSW matches handlers in registration order.
 // Specific paths (mine, summary, respond) MUST be registered before the
 // generic /:shortId handler, or they'll be shadowed by the param matcher.
 export const handlers = [
 	// ── POST /auth/google ─────────────────────────────────────────────────────
-	http.post(`${BASE}/auth/google`, () => {
-		isLoggedIn = true;
+	// The Google access token "mock-google-<id>" signs in as that mock user (e2e/fixtures.ts); any
+	// other token signs in as ME.
+	http.post(`${BASE}/auth/google`, async ({ request }) => {
+		const { accessToken } = (await request.json()) as { accessToken?: string };
+		const id = Number(accessToken?.match(/^mock-google-(\d+)$/)?.[1]);
+		activeUser = USERS.find(user => user.id === id) ?? ME;
 		return HttpResponse.json({
 			token: "mock-token",
 			id: activeUser.id,
@@ -143,7 +147,8 @@ export const handlers = [
 	// ── GET /users/me ─────────────────────────────────────────────────────────
 	http.get(`${BASE}/users/me`, ({ request }) => {
 		const auth = request.headers.get("Authorization");
-		if (!isLoggedIn && auth !== "Bearer mock-token") return new HttpResponse(null, { status: 401 });
+		// Like the API: no token, no user. Signing out only drops the token, so this must not be sticky.
+		if (auth !== "Bearer mock-token") return new HttpResponse(null, { status: 401 });
 		return HttpResponse.json(activeUser);
 	}),
 
@@ -205,7 +210,7 @@ export const handlers = [
 	// ── GET /events/mine /:shortId ───────────────────────────────────
 	http.get(`${BASE}/events/mine`, ({ request }) => {
 		const auth = request.headers.get("Authorization");
-		if (!isLoggedIn && auth !== "Bearer mock-token") return new HttpResponse(null, { status: 401 });
+		if (auth !== "Bearer mock-token") return new HttpResponse(null, { status: 401 });
 		const myEventIds = new Set(
 			EVENT_USERS.filter(eu => eu.user.id === activeUser.id).map(eu => eu.event.id),
 		);
