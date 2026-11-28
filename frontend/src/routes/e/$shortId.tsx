@@ -7,11 +7,11 @@ import { useEffect, useState } from "react";
 import { GoogleIcon } from "../../components/icons/GoogleIcon";
 import { GradientIcon } from "../../components/icons/GradientIcon";
 import { Button } from "../../components/ui/button";
-import { CopyLinkButton } from "../../components/ui/CopyLinkButton";
 import { ConfirmedTime } from "../../components/ui/pages/event/ConfirmedTime";
 import { EditEventDialog } from "../../components/ui/pages/event/EditEventDialog";
 import { HeatmapTabs } from "../../components/ui/pages/event/HeatmapTabs";
 import { ShareEventDialog } from "../../components/ui/pages/event/ShareEventDialog";
+import { ShareLinkPanel } from "../../components/ui/ShareLinkPanel";
 import { Skeleton } from "../../components/ui/skeleton";
 import { UserButton } from "../../components/ui/UserButton";
 import { useGoogleAuth } from "../../hooks/mutation/useGoogleAuth";
@@ -101,7 +101,11 @@ function RouteComponent() {
 						eventTimezone={event.details.timezone ?? "UTC"}
 					/>
 				)}
-				<CopyLinkButton shortId={shortId} text />
+				<ShareLinkPanel
+					shortId={shortId}
+					eventName={event.details.name ?? ""}
+					className="max-w-md"
+				/>
 			</div>
 			<EditEventDialog
 				shortId={shortId}

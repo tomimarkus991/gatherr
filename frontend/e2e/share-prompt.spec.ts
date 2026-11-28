@@ -14,47 +14,52 @@ async function createEventToSharePrompt(page: import("@playwright/test").Page, n
 	return dialog;
 }
 
-test("share prompt opens after creating and shares the clean event URL", async ({
-	signedIn: page,
-	baseURL,
-}) => {
-	await page.addInitScript(() => {
-		const calls: ShareData[] = [];
-		Object.assign(window, { shareCalls: calls });
-		Object.defineProperty(navigator, "share", {
-			value: (data: ShareData) => {
-				calls.push(data);
-				return Promise.resolve();
-			},
-			configurable: true,
+// The share sheet button is shown on phones only.
+test.describe("phone", () => {
+	test.use({ viewport: { width: 375, height: 667 }, isMobile: true, hasTouch: true });
+
+	test("share prompt opens after creating and shares the clean event URL", async ({
+		signedIn: page,
+		baseURL,
+	}) => {
+		await page.addInitScript(() => {
+			const calls: ShareData[] = [];
+			Object.assign(window, { shareCalls: calls });
+			Object.defineProperty(navigator, "share", {
+				value: (data: ShareData) => {
+					calls.push(data);
+					return Promise.resolve();
+				},
+				configurable: true,
+			});
 		});
+
+		const dialog = await createEventToSharePrompt(page, "Quiz night");
+		await expect(dialog.locator('img[src="/fireplace.svg"]')).toBeVisible();
+		await dialog.getByRole("button", { name: "Share", exact: true }).click();
+
+		const shortId = new URL(page.url()).pathname.split("/").pop();
+		const calls = await page.evaluate(() => (window as unknown as { shareCalls: ShareData[] }).shareCalls);
+		expect(calls).toEqual([{ url: `${baseURL}/e/${shortId}`, title: "Quiz night" }]);
 	});
-
-	const dialog = await createEventToSharePrompt(page, "Quiz night");
-	await expect(dialog.locator('img[src="/fireplace.svg"]')).toBeVisible();
-	await dialog.getByRole("button", { name: "Share", exact: true }).click();
-
-	const shortId = new URL(page.url()).pathname.split("/").pop();
-	const calls = await page.evaluate(() => (window as unknown as { shareCalls: ShareData[] }).shareCalls);
-	expect(calls).toEqual([{ url: `${baseURL}/e/${shortId}`, title: "Quiz night" }]);
 });
 
-test("share prompt copies the link when the share sheet is unavailable", async ({
+test("share prompt on desktop shows the link and copies it, with no app buttons", async ({
 	signedIn: page,
 	context,
 	baseURL,
 }) => {
 	await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-	await page.addInitScript(() => {
-		Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
-	});
 
 	const dialog = await createEventToSharePrompt(page, "Karaoke");
-	await dialog.getByRole("button", { name: "Share", exact: true }).click();
+	const shortId = new URL(page.url()).pathname.split("/").pop();
+	await expect(dialog.getByText(`${new URL(baseURL ?? "").host}/e/${shortId}`, { exact: true })).toBeVisible();
+	await dialog.getByRole("button", { name: "Copy link" }).click();
 
 	await expect(page.getByText("Link copied!")).toBeVisible();
-	const shortId = new URL(page.url()).pathname.split("/").pop();
 	expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(`${baseURL}/e/${shortId}`);
+	await expect(dialog.getByRole("link")).toHaveCount(0);
+	await expect(dialog.getByRole("button", { name: "Share", exact: true })).toHaveCount(0);
 });
 
 // A reload resets the in-page mock data, so this checks the URL a reload would use; the test
