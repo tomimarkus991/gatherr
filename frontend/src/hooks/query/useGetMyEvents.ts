@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import type { components } from "../../api/types.gen";
+import { useToken } from "../../lib/authToken";
 import { GatherrApiClient } from "../../lib/axios";
 
 type ResponseType = components["schemas"]["EventResponseDto"];
@@ -16,9 +17,10 @@ const queryFn = async (): Promise<ResponseType[]> => {
 };
 
 export const useGetMyEvents = () => {
+	const token = useToken();
 	return useQuery({
 		queryKey: ["/events/mine"],
 		queryFn,
-		enabled: typeof window !== "undefined" && !!localStorage.getItem("token"),
+		enabled: !!token,
 	});
 };

@@ -33,3 +33,47 @@ export async function createEvent(page: Page, name: string) {
 	await expect(page).toHaveURL(/\/e\/[\w-]+$/);
 	await expect(page.getByText(name, { exact: true })).toBeVisible();
 }
+
+/**
+ * Replaces Google's sign-in script with a stub whose token client answers at once with the access
+ * token "mock-google-<id>", which the MSW handlers sign in as that mock user (src/mocks/data.ts).
+ * Call before the first page load; pick the account with `chooseGoogleAccount`.
+ */
+export async function stubGoogleSignIn(page: Page) {
+	await page.route("https://accounts.google.com/gsi/client", route =>
+		route.fulfill({
+			contentType: "text/javascript",
+			body: `window.google = { accounts: { oauth2: { initTokenClient: config => ({
+				requestAccessToken: () => setTimeout(() =>
+					config.callback({ access_token: "mock-google-" + (window.__googleAccountId ?? 1) })),
+			}) } } };`,
+		}),
+	);
+}
+
+/** The mock user id the stubbed Google popup signs in as next. */
+export async function chooseGoogleAccount(page: Page, userId: number) {
+	await page.evaluate(id => {
+		(window as unknown as { __googleAccountId: number }).__googleAccountId = id;
+	}, userId);
+}
+
+/** Opens the user menu and clicks "Continue with Google". */
+export async function signInFromUserMenu(page: Page) {
+	await userMenu(page).click();
+	await page.getByRole("dialog").getByRole("button", { name: "Continue with Google" }).click();
+	await expect(userMenu(page).locator("svg.lucide-user-round-check")).toBeVisible();
+	await page.keyboard.press("Escape");
+}
+
+/** Opens the user menu and clicks "Sign out". */
+export async function signOutFromUserMenu(page: Page) {
+	await userMenu(page).click();
+	await page.getByRole("dialog").getByRole("button", { name: "Sign out" }).click();
+	await expect(userMenu(page).locator("svg.lucide-user-round")).toBeVisible();
+	await page.keyboard.press("Escape");
+}
+
+/** The user menu button (top right): a person icon, with a check mark when signed in. */
+const userMenu = (page: Page) =>
+	page.locator("button:has(svg.lucide-user-round, svg.lucide-user-round-check)");
