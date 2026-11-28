@@ -1,5 +1,19 @@
+import { addDays, format } from "date-fns";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { HttpResponse, http } from "msw";
-import { EVENT_USERS, EVENTS, ME, makeEventUser, shortId } from "./data";
+import type { components } from "../api/types.gen";
+import { parseSlot, WEEKDAYS } from "../lib/timezone";
+import {
+	busySlotsFor,
+	CALENDARS,
+	EVENT_USERS,
+	EVENTS,
+	isCalendarConnected,
+	ME,
+	makeEventUser,
+	setCalendarConnected,
+	shortId,
+} from "./data";
 import type {
 	Event,
 	EventUser,
@@ -9,7 +23,51 @@ import type {
 	User,
 } from "./types";
 
+type CalendarListDto = components["schemas"]["CalendarListDto"];
+type BusySlotsDto = components["schemas"]["BusySlotsDto"];
+type ConfirmEventDto = components["schemas"]["ConfirmEventDto"];
+
 const BASE = "/api/v1";
+
+/**
+ * Start and end of a confirmed slot, like the backend's SlotTimes: a timed slot lasts one time
+ * increment, a slot without a time is the whole day. Weekday slots use the next such weekday,
+ * today included unless a timed slot has already started. Null if the slot is malformed.
+ */
+function confirmedRange(event: Event, slot: string): { start: string; end: string } | null {
+	const { time, day } = parseSlot(slot);
+	const now = new Date();
+	let date: string;
+	if (/^\d{8}$/.test(day)) {
+		date = `${day.slice(4, 8)}-${day.slice(2, 4)}-${day.slice(0, 2)}`;
+	} else {
+		const target = WEEKDAYS.indexOf(day as (typeof WEEKDAYS)[number]);
+		if (target === -1) return null;
+		const today = (Number(formatInTimeZone(now, event.timezone, "i")) + 6) % 7;
+		const todayDate = new Date(`${formatInTimeZone(now, event.timezone, "yyyy-MM-dd")}T00:00:00`);
+		date = format(addDays(todayDate, (target - today + 7) % 7), "yyyy-MM-dd");
+		if (
+			time &&
+			fromZonedTime(`${date}T${time.slice(0, 2)}:${time.slice(2, 4)}:00`, event.timezone) < now
+		) {
+			date = format(addDays(new Date(`${date}T00:00:00`), 7), "yyyy-MM-dd");
+		}
+	}
+	if (time) {
+		const start = fromZonedTime(
+			`${date}T${time.slice(0, 2)}:${time.slice(2, 4)}:00`,
+			event.timezone,
+		);
+		const end = new Date(start.getTime() + event.timeIncrement * 60_000);
+		return { start: start.toISOString(), end: end.toISOString() };
+	}
+	const start = fromZonedTime(`${date}T00:00:00`, event.timezone);
+	const nextDay = format(addDays(new Date(`${date}T00:00:00`), 1), "yyyy-MM-dd");
+	return {
+		start: start.toISOString(),
+		end: fromZonedTime(`${nextDay}T00:00:00`, event.timezone).toISOString(),
+	};
+}
 
 /**
  * FETCH EXAMPLES
@@ -84,6 +142,43 @@ export const handlers = [
 		const auth = request.headers.get("Authorization");
 		if (!isLoggedIn && auth !== "Bearer mock-token") return new HttpResponse(null, { status: 401 });
 		return HttpResponse.json(activeUser);
+	}),
+
+	// ── Google Calendar ───────────────────────────────────────────────────────
+	// Not connected until the user goes through the connect step (403, like the backend).
+	http.get(`${BASE}/auth/google/calendar/url`, ({ request }) => {
+		// The real flow goes Google → backend → /calendar-connect, which returns to the event page.
+		setCalendarConnected(true);
+		return HttpResponse.json({ url: new URL("/calendar-connect?success=true", request.url).href });
+	}),
+
+	http.get(`${BASE}/users/me/calendars`, () => {
+		if (!isCalendarConnected()) return new HttpResponse(null, { status: 403 });
+		return HttpResponse.json({
+			calendars: CALENDARS.map(({ id, summary }) => ({ id, summary })),
+		} satisfies CalendarListDto);
+	}),
+
+	http.delete(`${BASE}/users/me/calendars`, () => {
+		setCalendarConnected(false);
+		return new HttpResponse(null, { status: 204 });
+	}),
+
+	http.get(`${BASE}/events/:shortId/calendar-busy`, ({ params, request }) => {
+		if (!isCalendarConnected()) return new HttpResponse(null, { status: 403 });
+		const event = EVENTS.find(e => e.shortId === params.shortId && !e.isDeleted);
+		if (!event) return new HttpResponse(null, { status: 404 });
+		// axios sends an array as calendarIds[]=a&calendarIds[]=b; Spring also takes calendarIds=a,b.
+		const { searchParams } = new URL(request.url);
+		const calendarIds = [
+			...searchParams.getAll("calendarIds"),
+			...searchParams.getAll("calendarIds[]"),
+		]
+			.flatMap(value => value.split(","))
+			.filter(Boolean);
+		return HttpResponse.json({
+			busySlots: busySlotsFor(event, calendarIds),
+		} satisfies BusySlotsDto);
 	}),
 
 	// ── PATCH /users/me ───────────────────────────────────────────────────────
@@ -189,6 +284,24 @@ export const handlers = [
 		};
 		EVENT_USERS.push(newEu);
 		return HttpResponse.json(newEu, { status: 201 });
+	}),
+
+	// ── POST /events/:shortId/confirm ─────────────────────
+	http.post(`${BASE}/events/:shortId/confirm`, async ({ params, request }) => {
+		const event = EVENTS.find(e => e.shortId === params.shortId && !e.isDeleted);
+		if (!event) return new HttpResponse(null, { status: 404 });
+		if (event.creator.id !== activeUser.id) return new HttpResponse(null, { status: 403 });
+		const { slot } = (await request.json()) as ConfirmEventDto;
+		const range = event.times.includes(slot) ? confirmedRange(event, slot) : null;
+		if (!range) return new HttpResponse(null, { status: 400 });
+		const now = new Date().toISOString();
+		Object.assign(event, {
+			confirmedAt: now,
+			confirmedStart: range.start,
+			confirmedEnd: range.end,
+			updatedAt: now,
+		});
+		return HttpResponse.json(event);
 	}),
 
 	// ── POST /events ──────────────────────────────────────────────────────────

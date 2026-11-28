@@ -1,10 +1,12 @@
-import { CalendarDaysIcon, Loader2Icon, PlugZapIcon, Trash2Icon } from "lucide-react";
+import { CalendarIcon, Loader2Icon, PlugZapIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
 import { useGetBusySlots } from "../../../../hooks/mutation/useGetBusySlots";
 import { useRevokeCalendarAccess } from "../../../../hooks/mutation/useRevokeCalendarAccess";
 import { useListCalendars } from "../../../../hooks/query/useListCalendars";
 import { GatherrApiClient } from "../../../../lib/axios";
 import { rememberCalendarConnectReturn } from "../../../../lib/calendarConnectReturn";
+import { m } from "../../../../paraglide/messages";
+import { GoogleIcon } from "../../../icons/GoogleIcon";
 import { Button } from "../../button";
 
 interface Props {
@@ -71,36 +73,38 @@ export const CalendarImport = ({ shortId, onBusySlotsLoaded }: Props) => {
 
 	if (step === "idle") {
 		return (
-			<Button size="sm" className="flex items-center gap-2" onClick={handleImportClick}>
-				<CalendarDaysIcon className="size-4" />
-				Import from Google Calendar
-			</Button>
+			<div className="mb-8">
+				<Button size="sm" variant="orange" className="gap-2" onClick={handleImportClick}>
+					<GoogleIcon className="size-4" />
+					{m.calendar_import_button()}
+				</Button>
+			</div>
 		);
 	}
 
 	if (step === "picking" && calendarsLoading) {
 		return (
-			<div className="flex items-center gap-2 text-sm text-info">
+			<div className="flex items-center gap-2 text-sm text-info mb-8">
 				<Loader2Icon className="size-4 animate-spin" />
-				Loading your calendars...
+				{m.calendar_import_loading_calendars()}
 			</div>
 		);
 	}
 
 	if (step === "picking" && notConnected) {
 		return (
-			<div className="flex flex-col gap-3 p-4 bg-canvas rounded-xl">
-				<p className="text-sm">Connect your Google Calendar to import busy times.</p>
+			<div className="flex flex-col gap-3 p-4 bg-canvas rounded-xl mb-8">
+				<p className="text-sm">{m.calendar_import_connect_text()}</p>
 				<Button size="sm" className="flex items-center gap-2" onClick={handleConnectClick}>
 					<PlugZapIcon className="size-4" />
-					Connect Google Calendar
+					{m.calendar_import_connect_button()}
 				</Button>
 				<button
 					type="button"
 					className="text-xs text-info underline"
 					onClick={() => setStep("idle")}
 				>
-					Cancel
+					{m.calendar_import_cancel()}
 				</button>
 			</div>
 		);
@@ -111,57 +115,74 @@ export const CalendarImport = ({ shortId, onBusySlotsLoaded }: Props) => {
 		const allIds = calendars.map(cal => cal.id ?? "").filter(Boolean);
 		const allSelected = allIds.length > 0 && allIds.every(id => selectedIds.has(id));
 		return (
-			<div className="flex flex-col gap-3 p-4 bg-canvas rounded-xl">
-				<div className="flex items-center justify-between gap-2">
-					<p className="text-sm font-semibold">Select calendars to import from:</p>
-					{allIds.length > 1 && (
-						<button
-							type="button"
-							className="text-xs text-info underline cursor-pointer shrink-0"
-							onClick={() => setSelectedIds(allSelected ? new Set() : new Set(allIds))}
-						>
-							{allSelected ? "Deselect all" : "Select all"}
-						</button>
-					)}
+			<div className="bg-canvas rounded-2xl p-4 space-y-4 mx-4 mb-8 flex flex-col justify-center">
+				<div className="flex items-center gap-2 mb-4">
+					<GoogleIcon className="size-6 shrink-0" />
+					<p className="font-semibold text-xl">{m.calendar_import_picker_title()}</p>
 				</div>
+				<p className="text-xs text-info">{m.calendar_import_busy_hint()}</p>
+
+				{allIds.length > 1 && (
+					<button
+						type="button"
+						className="self-start text-xs text-info underline cursor-pointer"
+						onClick={() => setSelectedIds(allSelected ? new Set() : new Set(allIds))}
+					>
+						{allSelected ? m.calendar_import_deselect_all() : m.calendar_import_select_all()}
+					</button>
+				)}
 
 				{calendars.length === 0 ? (
-					<p className="text-sm text-info">No calendars found in your Google account.</p>
+					<p className="text-sm text-info">{m.calendar_import_no_calendars()}</p>
 				) : (
-					<ul className="flex flex-col gap-2">
-						{calendars.map(cal => (
-							<li key={cal.id}>
-								<label className="flex items-center gap-2 cursor-pointer text-sm">
-									<input
-										type="checkbox"
-										className="accent-primary"
-										checked={selectedIds.has(cal.id ?? "")}
-										onChange={() => toggleCalendar(cal.id ?? "")}
-									/>
-									{cal.summary ?? cal.id}
-								</label>
-							</li>
-						))}
+					<ul className="space-y-3">
+						{calendars.map(cal => {
+							const checked = selectedIds.has(cal.id ?? "");
+							return (
+								<li key={cal.id}>
+									<label className="flex items-center gap-3 cursor-pointer select-none">
+										{/* A real checkbox styled as the demo's square, so Tab and Space keep working. */}
+										<span className="relative flex size-5 shrink-0">
+											<input
+												type="checkbox"
+												className="peer size-5 appearance-none rounded border-2 border-info/40 transition-colors cursor-pointer checked:bg-primary checked:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-content"
+												checked={checked}
+												onChange={() => toggleCalendar(cal.id ?? "")}
+											/>
+											{checked && (
+												<CalendarIcon className="pointer-events-none absolute inset-0 m-auto size-3 text-white" />
+											)}
+										</span>
+										<span className="text-sm">{cal.summary ?? cal.id}</span>
+									</label>
+								</li>
+							);
+						})}
 					</ul>
 				)}
 
-				<div className="flex gap-2 mt-1">
-					<Button size="sm" disabled={selectedIds.size === 0} onClick={handleConfirm}>
-						Import busy times
+				<div className="flex gap-2 pt-1">
+					<Button
+						className="px-4"
+						size="sm"
+						disabled={selectedIds.size === 0}
+						onClick={handleConfirm}
+					>
+						{m.calendar_import_import_busy()}
 					</Button>
-					<Button size="sm" onClick={() => setStep("idle")}>
-						Cancel
+					<Button size="sm" variant="red" onClick={() => setStep("idle")}>
+						{m.calendar_import_cancel()}
 					</Button>
 				</div>
 
 				<button
 					type="button"
-					className="flex items-center gap-1 text-xs text-red-400 mt-1 cursor-pointer"
+					className="flex items-center gap-1 text-xs text-red-400 cursor-pointer"
 					onClick={() => revokeAccess()}
 					disabled={revoking}
 				>
 					<Trash2Icon className="size-3" />
-					Disconnect Google Calendar
+					{m.calendar_import_disconnect()}
 				</button>
 			</div>
 		);
@@ -169,9 +190,9 @@ export const CalendarImport = ({ shortId, onBusySlotsLoaded }: Props) => {
 
 	if (step === "loading" || busyLoading) {
 		return (
-			<div className="flex items-center gap-2 text-sm text-info">
+			<div className="flex items-center gap-2 text-sm text-info mb-8">
 				<Loader2Icon className="size-4 animate-spin" />
-				Fetching busy times...
+				{m.calendar_import_fetching_busy()}
 			</div>
 		);
 	}
