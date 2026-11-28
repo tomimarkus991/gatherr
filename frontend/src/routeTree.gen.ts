@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as CalendarConnectRouteImport } from './routes/calendar-connect'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EShortIdRouteImport } from './routes/e/$shortId'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/calendar-connect': typeof CalendarConnectRoute
   '/create': typeof CreateRoute
   '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/e/$shortId': typeof EShortIdRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/calendar-connect': typeof CalendarConnectRoute
   '/create': typeof CreateRoute
   '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/e/$shortId': typeof EShortIdRoute
 }
 export interface FileRoutesById {
@@ -61,19 +69,33 @@ export interface FileRoutesById {
   '/calendar-connect': typeof CalendarConnectRoute
   '/create': typeof CreateRoute
   '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/e/$shortId': typeof EShortIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/calendar-connect' | '/create' | '/privacy' | '/e/$shortId'
+  fullPaths:
+    | '/'
+    | '/calendar-connect'
+    | '/create'
+    | '/privacy'
+    | '/terms'
+    | '/e/$shortId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/calendar-connect' | '/create' | '/privacy' | '/e/$shortId'
+  to:
+    | '/'
+    | '/calendar-connect'
+    | '/create'
+    | '/privacy'
+    | '/terms'
+    | '/e/$shortId'
   id:
     | '__root__'
     | '/'
     | '/calendar-connect'
     | '/create'
     | '/privacy'
+    | '/terms'
     | '/e/$shortId'
   fileRoutesById: FileRoutesById
 }
@@ -82,11 +104,19 @@ export interface RootRouteChildren {
   CalendarConnectRoute: typeof CalendarConnectRoute
   CreateRoute: typeof CreateRoute
   PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
   EShortIdRoute: typeof EShortIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -130,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   CalendarConnectRoute: CalendarConnectRoute,
   CreateRoute: CreateRoute,
   PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
   EShortIdRoute: EShortIdRoute,
 }
 export const routeTree = rootRouteImport

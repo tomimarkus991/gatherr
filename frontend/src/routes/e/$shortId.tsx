@@ -85,9 +85,14 @@ function RouteComponent() {
 					</div>
 					<p className="text-info text-center">{m.create_google_calendar_hint_1()}</p>
 					<p className="text-info text-center -mt-1">{m.create_google_calendar_hint_2()}</p>
-					<Link to="/privacy" className="text-info text-sm underline mt-4">
-						{m.footer_privacy()}
-					</Link>
+					<div className="flex flex-row gap-6 mt-4">
+						<Link to="/privacy" className="text-info text-sm underline">
+							{m.footer_privacy()}
+						</Link>
+						<Link to="/terms" className="text-info text-sm underline">
+							{m.footer_terms()}
+						</Link>
+					</div>
 				</div>
 			)}
 
