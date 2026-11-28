@@ -4,7 +4,7 @@ import { ScrollFadeIn } from "../components/animations/ScrollFadeIn";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Navbar } from "../components/ui/navbar";
-import { HomeHero } from "../components/ui/pages/home/HomeHero";
+import { FlameBackground, HomeHero } from "../components/ui/pages/home/HomeHero";
 import { MyEvents } from "../components/ui/pages/home/MyEvents";
 import { TotalEventsCount } from "../components/ui/pages/home/TotalEventsCount";
 import { useGetMyEvents } from "../hooks/query/useGetMyEvents";
@@ -29,10 +29,12 @@ function App() {
 						<Navbar />
 					</HomeHero>
 				) : (
-					<div className="m-auto max-w-md">
-						<Navbar />
-						<MyEvents />
-					</div>
+					<FlameBackground className="pb-4">
+						<div className="m-auto max-w-md">
+							<Navbar />
+							<MyEvents />
+						</div>
+					</FlameBackground>
 				)}
 				<div className="m-auto max-w-md">
 					<ScrollFadeIn

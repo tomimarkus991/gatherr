@@ -3,13 +3,14 @@
  * The text starts as scattered glyphs (one on every `letterAmount`-th letter, the rest blank)
  * and resolves left to right over `time` ms, re-rolled every 50 ms.
  *
- * - An invisible copy of the final text reserves the layout, so nothing shifts while it runs.
+ * - Each scrambling glyph sits in the slot of the letter it replaces and takes no width of its own,
+ *   so the line breaks exactly like the final text. (A wide glyph such as a kanji can't push a
+ *   one-line headline onto two lines mid-animation.)
  * - Screen readers get the real text only.
  * - Under prefers-reduced-motion the final text shows immediately.
  * - `onView` starts it the first time the element scrolls into view.
  */
-import { useEffect, useRef, useState } from "react";
-import { cn } from "../../lib/utils";
+import { Fragment, useEffect, useRef, useState } from "react";
 
 export const GLYPHS = {
 	kanji:
@@ -39,22 +40,41 @@ interface Props {
 	className?: string;
 }
 
+/**
+ * One frame: for each letter, `null` when it is resolved, `""` when its slot is blank, or the glyph
+ * shown in its slot.
+ */
+type Frame = (string | null)[];
+
 const scramble = (
 	text: string,
 	elapsed: number,
 	time: number,
 	letterAmount: number,
 	glyphs: string[],
-) => {
+): Frame => {
 	const perLetter = time / text.length;
-	return text
-		.split("")
-		.map((letter, index) => {
-			if (elapsed > perLetter * index + 1) return letter;
-			if (letter === " " || index % letterAmount !== 0) return "";
-			return glyphs[Math.floor(Math.random() * glyphs.length)];
-		})
-		.join("");
+	return Array.from(text).map((letter, index) => {
+		if (elapsed > perLetter * index + 1) return null;
+		if (letter === " " || index % letterAmount !== 0) return "";
+		return glyphs[Math.floor(Math.random() * glyphs.length)];
+	});
+};
+
+/** A letter slot: the real letter (invisible until resolved) holds the width; a glyph overlays it. */
+const Slot = ({ letter, frame }: { letter: string; frame: string | null }) => {
+	if (frame === null) return letter;
+	return (
+		<span className="inline-grid">
+			<span className="invisible col-start-1 row-start-1">{letter}</span>
+			{frame && (
+				// Zero width, centred: the glyph overflows its slot instead of widening the line
+				<span className="col-start-1 row-start-1 flex w-0 justify-center justify-self-center">
+					{frame}
+				</span>
+			)}
+		</span>
+	);
 };
 
 export const LetterDecryptor = ({
@@ -67,12 +87,12 @@ export const LetterDecryptor = ({
 	className,
 }: Props) => {
 	const ref = useRef<HTMLSpanElement>(null);
-	const [shown, setShown] = useState(children);
+	const [frame, setFrame] = useState<Frame | null>(null);
 
 	useEffect(() => {
 		const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 		if (reduced || !children) {
-			setShown(children);
+			setFrame(null);
 			return;
 		}
 
@@ -85,12 +105,12 @@ export const LetterDecryptor = ({
 				const start = Date.now();
 				const chars = Array.from(glyphs);
 				const tick = () =>
-					setShown(scramble(children, Date.now() - start, time, letterAmount, chars));
+					setFrame(scramble(children, Date.now() - start, time, letterAmount, chars));
 				tick();
 				interval = setInterval(tick, 50);
 				endTimer = setTimeout(() => {
 					clearInterval(interval);
-					setShown(children);
+					setFrame(null);
 				}, time);
 			}, delay);
 		};
@@ -115,15 +135,37 @@ export const LetterDecryptor = ({
 			clearTimeout(startTimer);
 			clearTimeout(endTimer);
 			clearInterval(interval);
-			setShown(children);
+			setFrame(null);
 		};
 	}, [children, letterAmount, time, delay, onView, glyphs]);
 
+	const letters = Array.from(children);
+	// Words stay unbreakable groups, so slots never open line breaks inside a word
+	const words: { start: number; text: string[] }[] = [];
+	letters.forEach((letter, index) => {
+		if (letter === " ") return;
+		const last = words[words.length - 1];
+		if (last && last.start + last.text.length === index) last.text.push(letter);
+		else words.push({ start: index, text: [letter] });
+	});
+
 	return (
-		<span ref={ref} className="relative inline-block">
-			<span className="invisible">{children}</span>
-			<span aria-hidden className={cn("absolute inset-0", className)}>
-				{shown}
+		<span ref={ref}>
+			<span className="sr-only">{children}</span>
+			<span aria-hidden className={className}>
+				{frame === null
+					? children
+					: words.map((word, w) => (
+							<Fragment key={word.start}>
+								{w > 0 && " ".repeat(word.start - (words[w - 1].start + words[w - 1].text.length))}
+								<span className="whitespace-nowrap">
+									{word.text.map((letter, i) => (
+										// biome-ignore lint/suspicious/noArrayIndexKey: letter positions are fixed for a given text
+										<Slot key={word.start + i} letter={letter} frame={frame[word.start + i]} />
+									))}
+								</span>
+							</Fragment>
+						))}
 			</span>
 		</span>
 	);

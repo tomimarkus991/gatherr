@@ -1,3 +1,4 @@
+import { cn } from "../../../../lib/utils";
 import { m } from "../../../../paraglide/messages";
 import { AnimationWrapper } from "../../../animations/AnimationWrapper";
 import { animations } from "../../../animations/anim-constants";
@@ -19,18 +20,37 @@ interface Props {
 }
 
 /**
- * The home hero for visitors without events: the title decrypts in over a molten-marble shader
- * coloured from the palette tokens. Under prefers-reduced-motion the title shows at once and the
- * shader draws one still frame.
+ * The molten-marble shader behind the top of the home page, coloured from the palette tokens,
+ * darkened behind the content and faded into the page below. Under prefers-reduced-motion it
+ * draws one still frame.
  */
-export const HomeHero = ({ children }: Props) => (
-	<section className="relative isolate overflow-hidden pb-16" style={{ background: HERO_FALLBACK }}>
+export const FlameBackground = ({
+	children,
+	className,
+}: {
+	children: React.ReactNode;
+	className?: string;
+}) => (
+	<section
+		data-testid="flame-background"
+		className={cn("relative isolate overflow-hidden", className)}
+		style={{ background: HERO_FALLBACK }}
+	>
 		<ShaderCanvas fragment={marble} className="absolute inset-0 -z-10 size-full" />
-		{/* Darkens the shader behind the copy and fades it into the page below. */}
 		<div
 			aria-hidden
 			className="absolute inset-0 -z-10 bg-linear-to-b from-surface/40 via-surface/60 to-surface"
 		/>
+		{children}
+	</section>
+);
+
+/**
+ * The home hero for visitors without events: the title decrypts in over the flame background.
+ * Under prefers-reduced-motion the title shows at once.
+ */
+export const HomeHero = ({ children }: Props) => (
+	<FlameBackground className="pb-16">
 		<div className="m-auto max-w-md">
 			{children}
 			<p className="text-4xl font-bold text-center mt-16 mb-10">
@@ -44,5 +64,5 @@ export const HomeHero = ({ children }: Props) => (
 				<TotalEventsCount className="text-info text-sm text-center mt-4" />
 			</AnimationWrapper>
 		</div>
-	</section>
+	</FlameBackground>
 );
