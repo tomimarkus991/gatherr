@@ -1,5 +1,6 @@
 import { CalendarIcon, Loader2Icon, PlugZapIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
+import type { components } from "../../../../api/types.gen";
 import { useGetBusySlots } from "../../../../hooks/mutation/useGetBusySlots";
 import { useRevokeCalendarAccess } from "../../../../hooks/mutation/useRevokeCalendarAccess";
 import { useListCalendars } from "../../../../hooks/query/useListCalendars";
@@ -9,10 +10,15 @@ import { m } from "../../../../paraglide/messages";
 import { GoogleIcon } from "../../../icons/GoogleIcon";
 import { Button } from "../../button";
 
+export type BusySlotDetail = components["schemas"]["BusySlotDetailDto"];
+
 interface Props {
 	shortId: string;
-	/** Called with the busy slot strings once the user confirms their selection. */
-	onBusySlotsLoaded: (slots: string[]) => void;
+	/**
+	 * Called once the user confirms their selection, with the busy slot strings and, per busy slot,
+	 * which calendars are busy and when (empty from a backend that doesn't send details).
+	 */
+	onBusySlotsLoaded: (slots: string[], details: BusySlotDetail[]) => void;
 }
 
 type Step = "idle" | "picking" | "loading";
@@ -58,8 +64,8 @@ export const CalendarImport = ({ shortId, onBusySlotsLoaded }: Props) => {
 		getBusySlots(
 			{ shortId, calendarIds: [...selectedIds] },
 			{
-				onSuccess: ({ busySlots }) => {
-					onBusySlotsLoaded(busySlots ?? []);
+				onSuccess: ({ busySlots, busyDetails }) => {
+					onBusySlotsLoaded(busySlots ?? [], busyDetails ?? []);
 					setStep("idle");
 				},
 				onError: () => setStep("picking"),

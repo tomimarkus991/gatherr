@@ -35,7 +35,16 @@
     "event_group_availability_text": "Vajuta ruutudele all pool, et näha inimeste saadavust",
     "event_participants_title": "Osalejad",
     "event_participants_text": "Vali osalejad nende konkreetsete aegade esiletõstmiseks",
-    "event_time_slots": "{count} ajavõimalust",
+    "event_time_slots": [
+        {
+            "declarations": ["input count", "local countPlural = count: plural"],
+            "selectors": ["countPlural"],
+            "match": {
+                "countPlural=one": "{count} ajavõimalus",
+                "countPlural=other": "{count} ajavõimalust"
+            }
+        }
+    ],
     "event_heatmap_info": "saadaval",
     "home_hero_title": "Planeeri kogunemine",
     "home_hero_title_gradient": "sekunditega",
@@ -53,14 +62,32 @@
     "home_event_creator": "Looja",
     "home_event_joined": "Liitunud",
     "home_event_waiting": "Ootab vastuseid",
-    "home_event_responded": "{count} inimest vastas",
+    "home_event_responded": [
+        {
+            "declarations": ["input count", "local countPlural = count: plural"],
+            "selectors": ["countPlural"],
+            "match": {
+                "countPlural=one": "{count} inimene vastas",
+                "countPlural=other": "{count} inimest vastas"
+            }
+        }
+    ],
     "home_event_update": "Muuda",
     "home_event_delete": "Kustuta",
     "home_event_deleted": "Üritus kustutatud",
     "home_event_leave": "Lahku",
     "home_event_left": "Lahkusid üritusest",
     "home_event_coming_soon": "Tulemas",
-    "home_total_events": "Seni on loodud {count} üritust",
+    "home_total_events": [
+        {
+            "declarations": ["input count", "local countPlural = count: plural", "local countFormatted = count: number"],
+            "selectors": ["countPlural"],
+            "match": {
+                "countPlural=one": "Seni on loodud {countFormatted} üritus",
+                "countPlural=other": "Seni on loodud {countFormatted} üritust"
+            }
+        }
+    ],
     "user_settings_sign_in_to_save": "Logi sisse seadete salvestamiseks",
     "create_event_calendar_date_disabled": "Sa ei saa valida minevikus olevat kuupäeva",
     "copy_link_copied": "Link kopeeritud!",
@@ -81,8 +108,26 @@
     "calendar_import_import_busy": "Impordi hõivatud ajad",
     "calendar_import_disconnect": "Katkesta Google kalendri ühendus",
     "calendar_import_fetching_busy": "Laen hõivatud aegu...",
-    "calendar_import_result_removed": "{count} hõivatud aega eemaldati sinu valikust",
-    "calendar_import_result_none_selected": "Leiti {count} hõivatud aega, ükski neist polnud valitud",
+    "calendar_import_result_removed": [
+        {
+            "declarations": ["input count", "local countPlural = count: plural"],
+            "selectors": ["countPlural"],
+            "match": {
+                "countPlural=one": "{count} hõivatud aeg eemaldati sinu valikust",
+                "countPlural=other": "{count} hõivatud aega eemaldati sinu valikust"
+            }
+        }
+    ],
+    "calendar_import_result_none_selected": [
+        {
+            "declarations": ["input count", "local countPlural = count: plural"],
+            "selectors": ["countPlural"],
+            "match": {
+                "countPlural=one": "Leiti {count} hõivatud aeg, see polnud valitud",
+                "countPlural=other": "Leiti {count} hõivatud aega, ükski neist polnud valitud"
+            }
+        }
+    ],
     "calendar_import_result_no_conflicts": "Sinu kalendrites konflikte ei leitud",
     "calendar_import_saved": "{result}. Saadavus salvestatud.",
     "calendar_import_save_failed": "{result}, kuid salvestamine ebaõnnestus. Vajuta uuesti Salvesta.",
@@ -97,5 +142,11 @@
     "event_confirm_forbidden": "Aega saab kinnitada ainult korraldaja",
     "event_confirm_failed": "Aega ei õnnestunud kinnitada. Proovi uuesti.",
     "event_confirmed_title": "Lõplik aeg",
-    "event_confirmed_all_day": "terve päev"
+    "event_confirmed_all_day": "terve päev",
+    "blocked_slot_busy": "Kalendris hõivatud",
+    "blocked_slot_tooltip": "Hõivatud: {calendars} · {time}",
+    "blocked_slot_confirm_text": "Sul on siin kohustus ({calendars}, {time}). Kas märgid end ikkagi vabaks?",
+    "blocked_slot_confirm_text_unknown": "Sul on siin kohustus. Kas märgid end ikkagi vabaks?",
+    "blocked_slot_confirm_yes": "Märgi vabaks",
+    "blocked_slot_confirm_no": "Tühista"
 }

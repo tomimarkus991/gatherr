@@ -8,6 +8,7 @@
 	"scripts": {
 		"dev": "dotenv -e .env.local -- sh -c \"vite dev --port 3000\"",
 		"dev:device": "dotenv -e .env.local -- sh -c \"vite dev --port 3000 --host\"",
+		"dev:lan": "dotenv -e .env.local -- sh -c \"DEV_LAN=true vite dev --port 3000\"",
 		"build": "vite build",
 		"preview": "vite preview",
 		"test": "vitest run",
@@ -69,6 +70,7 @@
 		"@types/node": "^22.10.2",
 		"@types/react": "^19.2.0",
 		"@types/react-dom": "^19.2.0",
+		"@vitejs/plugin-basic-ssl": "^2.3.0",
 		"@vitejs/plugin-react": "^5.0.4",
 		"babel-plugin-react-compiler": "^1.0.0",
 		"dotenv": "^16.0.0",

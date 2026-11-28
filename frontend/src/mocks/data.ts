@@ -310,6 +310,20 @@ export function busySlotsFor(event: Event, calendarIds: string[]): string[] {
 	});
 }
 
+/** For each busy slot, the names of the chosen calendars busy in its hour, in calendar-list order. */
+export function busyCalendarsFor(event: Event, calendarIds: string[]): Map<string, string[]> {
+	const chosen = CALENDARS.filter(cal => calendarIds.includes(cal.id));
+	const result = new Map<string, string[]>();
+	for (const slot of busySlotsFor(event, calendarIds)) {
+		const hour = Number.parseInt(slot.slice(0, 2), 10);
+		result.set(
+			slot,
+			chosen.filter(cal => cal.busyHours.includes(hour)).map(cal => cal.summary),
+		);
+	}
+	return result;
+}
+
 // Connecting Google Calendar is a full-page round trip, which resets the mock data, so the
 // connected flag lives in sessionStorage.
 const CALENDAR_CONNECTED_KEY = "mockCalendarConnected";

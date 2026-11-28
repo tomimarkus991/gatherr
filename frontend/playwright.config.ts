@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 3100;
+// Set PW_PORT (and DEVTOOLS_PORT, see vite.config.ts) to run e2e in two checkouts at once.
+const PORT = Number(process.env.PW_PORT) || 3100;
 
 /**
  * End-to-end tests against the SPA in mock mode: MSW answers every /api/v1 call in the browser,

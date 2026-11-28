@@ -26,7 +26,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../tabs";
 import { useIsMobile } from "../../useIsMobile";
 import { dateFnsLocale } from "../create/calendar/Calendar";
-import { CalendarImport } from "./CalendarImport";
+import { BlockedSlotDialog, BlockedSlotTooltip } from "./BlockedSlot";
+import { type BusySlotDetail, CalendarImport } from "./CalendarImport";
 import { ConfirmSlotButton } from "./ConfirmSlotButton";
 
 interface TwoElementMovingBoxProps {
@@ -129,10 +130,23 @@ export const HeatmapTabs = ({
 	const isDragging = useRef(false);
 	const visitedSlots = useRef(new Set<string>());
 
-	// Busy slots from the last calendar import, as event slots. Page session only: replaced by the
-	// next import, never derived from the saved notAvailable (that holds every unselected slot).
-	const [blockedState, setBlockedState] = useState({ shortId, slots: new Set<string>() });
-	const blocked = blockedState.shortId === shortId ? blockedState.slots : new Set<string>();
+	// Busy slots from the last calendar import, as event slots, with why each is busy. Page session
+	// only: replaced by the next import, never derived from the saved notAvailable (that holds every
+	// unselected slot).
+	const [blockedState, setBlockedState] = useState({
+		shortId,
+		slots: new Set<string>(),
+		details: new Map<string, BusySlotDetail>(),
+	});
+	const isCurrentImport = blockedState.shortId === shortId;
+	const blocked = isCurrentImport ? blockedState.slots : new Set<string>();
+	const blockedDetail = (slot: string) =>
+		isCurrentImport ? blockedState.details.get(slot) : undefined;
+	// A blocked cell asks before it is selected: tapping it opens the confirm dialog, dragging skips it.
+	const [hoveredBlocked, setHoveredBlocked] = useState<string | null>(null);
+	const [confirmSlot, setConfirmSlot] = useState<string | null>(null);
+	const [confirmOpen, setConfirmOpen] = useState(false);
+	const pressedBlocked = useRef<string | null>(null);
 	const { mutate: respond } = useRespondToEvent(shortId);
 
 	const eventTz = event?.details.timezone ?? "UTC";
@@ -191,7 +205,7 @@ export const HeatmapTabs = ({
 		setSelectedSlots((event?.details.times ?? []).filter(slot => !blocked.has(slot)));
 	const handleDeselectAll = () => setSelectedSlots([]);
 
-	/** Tap or drag over a cell. Selecting a blocked cell is on purpose, so it unblocks it. */
+	/** Tap or drag over a cell, or a confirmed blocked cell. Selecting a blocked cell unblocks it. */
 	const toggleSlot = (slot: string) => {
 		setSelectedSlots(prev =>
 			prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot],
@@ -205,15 +219,40 @@ export const HeatmapTabs = ({
 		}
 	};
 
+	const askToUnblock = (slot: string) => {
+		setHoveredBlocked(null);
+		setConfirmSlot(slot);
+		setConfirmOpen(true);
+	};
+
+	const confirmUnblock = () => {
+		if (confirmSlot && blocked.has(confirmSlot)) toggleSlot(confirmSlot);
+		setConfirmOpen(false);
+	};
+
+	const endDrag = () => {
+		isDragging.current = false;
+		visitedSlots.current.clear();
+		pressedBlocked.current = null;
+	};
+
 	/** After a calendar import: deselect and block the busy slots, then save straight away. */
-	const handleBusySlots = (busySlots: string[]) => {
+	const handleBusySlots = (busySlots: string[], busyDetails: BusySlotDetail[]) => {
 		const allTimes = event?.details.times ?? [];
 		const busy = new Set(busySlots.filter(slot => allTimes.includes(slot)));
 		const available = selectedSlots.filter(slot => !busy.has(slot));
 		const result = importResultMessage(busy.size, selectedSlots.length - available.length);
 
 		setSelectedSlots(available);
-		setBlockedState({ shortId, slots: busy });
+		setBlockedState({
+			shortId,
+			slots: busy,
+			details: new Map(
+				busyDetails
+					.filter(detail => detail.slot && busy.has(detail.slot))
+					.map(detail => [detail.slot!, detail]),
+			),
+		});
 		respond(
 			{ shortId, available, notAvailable: allTimes.filter(slot => !available.includes(slot)) },
 			{
@@ -294,7 +333,10 @@ export const HeatmapTabs = ({
 								isDragging.current = true;
 								visitedSlots.current.clear();
 								visitedSlots.current.add(slot);
-								toggleSlot(slot);
+								setHoveredBlocked(null);
+								// A blocked cell waits for the pointer to lift: a tap asks, a drag skips it.
+								pressedBlocked.current = blocked.has(slot) ? slot : null;
+								if (!blocked.has(slot)) toggleSlot(slot);
 								(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
 							}}
 							onPointerMove={e => {
@@ -303,16 +345,14 @@ export const HeatmapTabs = ({
 								const slot = el?.closest("[data-slot]")?.getAttribute("data-slot");
 								if (!slot || visitedSlots.current.has(slot)) return;
 								visitedSlots.current.add(slot);
-								toggleSlot(slot);
+								if (!blocked.has(slot)) toggleSlot(slot);
 							}}
 							onPointerUp={() => {
-								isDragging.current = false;
-								visitedSlots.current.clear();
+								const tapped = pressedBlocked.current;
+								if (tapped && visitedSlots.current.size === 1) askToUnblock(tapped);
+								endDrag();
 							}}
-							onPointerCancel={() => {
-								isDragging.current = false;
-								visitedSlots.current.clear();
-							}}
+							onPointerCancel={endDrag}
 						>
 							{/* date headers */}
 							<div className="flex flex-row mb-6">
@@ -365,7 +405,7 @@ export const HeatmapTabs = ({
 											const isInLocal = selectedSlots.includes(realSlot);
 											const isBlocked = !isInLocal && blocked.has(realSlot);
 
-											return (
+											const cell = (
 												<button
 													type="button"
 													key={displaySlot}
@@ -373,6 +413,21 @@ export const HeatmapTabs = ({
 													data-blocked={isBlocked || undefined}
 													className="relative w-12 h-12 shrink-0 m-0.5 overflow-hidden rounded-xl"
 													disabled={!me}
+													// Scroll mode on mobile has no pointer selection; a tap still explains the block.
+													onClick={isBlocked && !canDrag ? () => askToUnblock(realSlot) : undefined}
+													onPointerEnter={
+														isBlocked
+															? e => {
+																	if (e.pointerType === "mouse" && !isDragging.current)
+																		setHoveredBlocked(realSlot);
+																}
+															: undefined
+													}
+													onPointerLeave={
+														isBlocked
+															? () => setHoveredBlocked(prev => (prev === realSlot ? null : prev))
+															: undefined
+													}
 												>
 													<div
 														className={cn(
@@ -401,6 +456,17 @@ export const HeatmapTabs = ({
 														<BanIcon className="absolute inset-0 size-5 m-auto z-10 text-secondary" />
 													)}
 												</button>
+											);
+											if (!isBlocked) return cell;
+											return (
+												<BlockedSlotTooltip
+													key={displaySlot}
+													open={hoveredBlocked === realSlot}
+													detail={blockedDetail(realSlot)}
+													timeZone={userTz}
+												>
+													{cell}
+												</BlockedSlotTooltip>
 											);
 										})}
 									</div>
@@ -519,6 +585,14 @@ export const HeatmapTabs = ({
 					</div>
 				</TabsContent>
 			</Tabs>
+
+			<BlockedSlotDialog
+				open={confirmOpen}
+				onOpenChange={setConfirmOpen}
+				detail={confirmSlot ? blockedDetail(confirmSlot) : undefined}
+				timeZone={userTz}
+				onConfirm={confirmUnblock}
+			/>
 
 			{/* fixed mode toggle — only visible on yours tab on mobile */}
 			{me && selectedIndex === 0 && isMobile && (
