@@ -197,7 +197,8 @@ export const EVENTS: Event[] = [
 	makeEvent(1, ME, { shortId: "cozy-hot-toast-1234" }),
 	makeEvent(2, ME),
 	makeEvent(3, ME),
-	makeEvent(4, USERS[1]),
+	// Fixed ID so e2e tests can open an event the signed-in user did not create.
+	makeEvent(4, USERS[1], { name: "Oliver's picnic", shortId: "olivers-picnic" }),
 	makeEvent(5, USERS[2]),
 	makeEvent(6, USERS[3]),
 ];

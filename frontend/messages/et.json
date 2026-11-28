@@ -85,5 +85,11 @@
     "calendar_import_result_none_selected": "Leiti {count} hõivatud aega, ükski neist polnud valitud",
     "calendar_import_result_no_conflicts": "Sinu kalendrites konflikte ei leitud",
     "calendar_import_saved": "{result}. Saadavus salvestatud.",
-    "calendar_import_save_failed": "{result}, kuid salvestamine ebaõnnestus. Vajuta uuesti Salvesta."
+    "calendar_import_save_failed": "{result}, kuid salvestamine ebaõnnestus. Vajuta uuesti Salvesta.",
+    "event_edit": "Muuda",
+    "event_edit_title": "Muuda üritust",
+    "event_edit_name": "Nimi",
+    "event_edit_description": "Kirjeldus",
+    "share_dialog_title": "Jaga seda üritust oma sõpradega",
+    "share_dialog_button": "Jaga"
 }

@@ -85,5 +85,11 @@
   "calendar_import_result_none_selected": "{count} busy slots found, none were selected",
   "calendar_import_result_no_conflicts": "No conflicts found in your calendars",
   "calendar_import_saved": "{result}. Availability saved.",
-  "calendar_import_save_failed": "{result}, but saving failed. Press Save to try again."
+  "calendar_import_save_failed": "{result}, but saving failed. Press Save to try again.",
+  "event_edit": "Edit",
+  "event_edit_title": "Edit event",
+  "event_edit_name": "Name",
+  "event_edit_description": "Description",
+  "share_dialog_title": "Share this event with your friends",
+  "share_dialog_button": "Share"
 }

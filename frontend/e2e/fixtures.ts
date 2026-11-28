@@ -12,7 +12,10 @@ export const test = base.extend<{ signedIn: Page }>({
 
 export { expect };
 
-/** Goes from the home page to a new event page: name, one date next month, default time range. */
+/**
+ * Goes from the home page to a new event page: name, one date next month, default time range.
+ * Closes the share prompt that the create flow opens, so the event page is ready to use.
+ */
 export async function createEvent(page: Page, name: string) {
 	await page.goto("/");
 	await page.getByPlaceholder(/Team meeting/).fill(name);
@@ -24,6 +27,9 @@ export async function createEvent(page: Page, name: string) {
 	await page.locator("[data-date]").nth(10).click();
 	await page.getByRole("button", { name: "Create Event" }).click();
 
+	await expect(page).toHaveURL(/\/e\/[\w-]+\?fromCreate=true$/);
+	await expect(page.getByRole("dialog", { name: "Share this event with your friends" })).toBeVisible();
+	await page.keyboard.press("Escape");
 	await expect(page).toHaveURL(/\/e\/[\w-]+$/);
 	await expect(page.getByText(name, { exact: true })).toBeVisible();
 }
