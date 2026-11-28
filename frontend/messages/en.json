@@ -136,5 +136,11 @@
   "event_edit_name": "Name",
   "event_edit_description": "Description",
   "share_dialog_title": "Share this event with your friends",
-  "share_dialog_button": "Share"
+  "share_dialog_button": "Share",
+  "blocked_slot_busy": "Busy in your calendar",
+  "blocked_slot_tooltip": "Busy in {calendars} · {time}",
+  "blocked_slot_confirm_text": "You're busy here ({calendars}, {time}). Mark yourself available anyway?",
+  "blocked_slot_confirm_text_unknown": "You're busy here. Mark yourself available anyway?",
+  "blocked_slot_confirm_yes": "Mark available",
+  "blocked_slot_confirm_no": "Cancel"
 }

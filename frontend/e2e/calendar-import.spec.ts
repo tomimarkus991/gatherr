@@ -96,7 +96,7 @@ test("import removes selected busy slots and says how many", async ({ signedIn: 
 	await expect(page.getByText(`${total - 2} time slots`)).toBeVisible();
 });
 
-test("busy cells show blocked, select all skips them, tapping one unblocks it", async ({
+test("busy cells show blocked, select all skips them, tapping one asks before unblocking it", async ({
 	signedIn: page,
 }) => {
 	await connectCalendar(page);
@@ -120,9 +120,105 @@ test("busy cells show blocked, select all skips them, tapping one unblocks it", 
 	await expect(page.locator('[data-slot^="1300-"]')).toHaveAttribute("data-blocked", "true");
 
 	await blocked.first().click();
+	await page.getByRole("dialog").getByRole("button", { name: "Mark available" }).click();
 	await expect(page.locator('[data-slot^="1300-"]')).not.toHaveAttribute("data-blocked", /.*/);
 	await expect(page.locator('[data-slot^="1300-"] svg.lucide-check')).toHaveCount(1);
 	await expect(blocked).toHaveCount(1);
+});
+
+/** A new event with Personal imported: its 13:00 and 13:30 cells are blocked, busy 13:00–14:00. */
+async function importPersonal(page: Page, name: string) {
+	await connectCalendar(page);
+	await createEvent(page, name);
+	await openPicker(page);
+	await importFrom(page, ["Personal"]);
+	await expect(page.getByText(/Availability saved/)).toBeVisible();
+	await expect(page.locator("[data-slot][data-blocked]")).toHaveCount(2);
+}
+
+const cell = (page: Page, time: string) => page.locator(`[data-slot^="${time}-"]`);
+
+/** Drags the mouse through the centres of the cells at `times`, which must fit in the viewport. */
+async function drag(page: Page, times: string[]) {
+	// The grid handles the drag with elementFromPoint, which only sees the viewport.
+	await cell(page, times[Math.floor(times.length / 2)]).evaluate(el =>
+		el.scrollIntoView({ block: "center" }),
+	);
+	const points = [];
+	for (const time of times) {
+		const box = await cell(page, time).boundingBox();
+		if (!box) throw new Error(`no cell at ${time}`);
+		points.push({ x: box.x + box.width / 2, y: box.y + box.height / 2 });
+	}
+	await page.mouse.move(points[0].x, points[0].y);
+	await page.mouse.down();
+	for (const point of points.slice(1)) await page.mouse.move(point.x, point.y, { steps: 4 });
+	await page.mouse.up();
+}
+
+test("hovering a blocked cell says which calendar is busy and when", async ({ signedIn: page }) => {
+	await importPersonal(page, "Blocked tooltip");
+
+	await cell(page, "1330").hover();
+	await expect(page.getByRole("tooltip")).toHaveText("Busy in Personal · 13:00–14:00");
+
+	await cell(page, "1200").hover();
+	await expect(page.getByRole("tooltip")).toHaveCount(0);
+});
+
+test("tapping a blocked cell and confirming marks it available", async ({ signedIn: page }) => {
+	await importPersonal(page, "Blocked confirm");
+
+	await cell(page, "1300").click();
+	const dialog = page.getByRole("dialog");
+	await expect(dialog).toContainText(
+		"You're busy here (Personal, 13:00–14:00). Mark yourself available anyway?",
+	);
+	await dialog.getByRole("button", { name: "Mark available" }).click();
+
+	await expect(dialog).toHaveCount(0);
+	await expect(cell(page, "1300")).not.toHaveAttribute("data-blocked", /.*/);
+	await expect(cell(page, "1300").locator("svg.lucide-check")).toHaveCount(1);
+	await expect(cell(page, "1330")).toHaveAttribute("data-blocked", "true");
+});
+
+test("tapping a blocked cell and cancelling keeps it blocked", async ({ signedIn: page }) => {
+	await importPersonal(page, "Blocked cancel");
+
+	await cell(page, "1300").click();
+	const dialog = page.getByRole("dialog");
+	await expect(dialog).toBeVisible();
+	await dialog.getByRole("button", { name: "Cancel" }).click();
+
+	await expect(dialog).toHaveCount(0);
+	await expect(cell(page, "1300")).toHaveAttribute("data-blocked", "true");
+	await expect(cell(page, "1300").locator("svg.lucide-check")).toHaveCount(0);
+});
+
+test("dragging across blocked cells skips them without asking", async ({ signedIn: page }) => {
+	await importPersonal(page, "Blocked drag");
+
+	// One date column: drag down from 12:00 to 14:00, across the blocked 13:00 and 13:30.
+	await drag(page, ["1200", "1230", "1300", "1330", "1400"]);
+
+	await expect(page.getByRole("dialog")).toHaveCount(0);
+	for (const time of ["1200", "1230", "1400"]) {
+		await expect(cell(page, time).locator("svg.lucide-check")).toHaveCount(1);
+	}
+	for (const time of ["1300", "1330"]) {
+		await expect(cell(page, time)).toHaveAttribute("data-blocked", "true");
+		await expect(cell(page, time).locator("svg.lucide-check")).toHaveCount(0);
+	}
+});
+
+test("a drag that starts on a blocked cell skips it too", async ({ signedIn: page }) => {
+	await importPersonal(page, "Blocked drag start");
+
+	await drag(page, ["1330", "1400"]);
+
+	await expect(page.getByRole("dialog")).toHaveCount(0);
+	await expect(cell(page, "1330")).toHaveAttribute("data-blocked", "true");
+	await expect(cell(page, "1400").locator("svg.lucide-check")).toHaveCount(1);
 });
 
 test("import with nothing selected says how many busy slots it found", async ({

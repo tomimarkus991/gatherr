@@ -4,7 +4,7 @@ import { HttpResponse, http } from "msw";
 import type { components } from "../api/types.gen";
 import { parseSlot, WEEKDAYS } from "../lib/timezone";
 import {
-	busySlotsFor,
+	busyCalendarsFor,
 	CALENDARS,
 	EVENT_USERS,
 	EVENTS,
@@ -179,8 +179,19 @@ export const handlers = [
 		]
 			.flatMap(value => value.split(","))
 			.filter(Boolean);
+		// Each mock calendar is busy for whole hours, so a busy slot's period is the hour it starts in.
+		const busy = busyCalendarsFor(event, calendarIds);
+		const busyDetails = [...busy].flatMap(([slot, calendars]) => {
+			const range = confirmedRange(event, slot);
+			if (!range) return [];
+			const minutes = Number.parseInt(slot.slice(2, 4), 10);
+			const start = new Date(new Date(range.start).getTime() - minutes * 60_000);
+			const end = new Date(start.getTime() + 60 * 60_000);
+			return [{ slot, calendars, start: start.toISOString(), end: end.toISOString() }];
+		});
 		return HttpResponse.json({
-			busySlots: busySlotsFor(event, calendarIds),
+			busySlots: [...busy.keys()],
+			busyDetails,
 		} satisfies BusySlotsDto);
 	}),
 
