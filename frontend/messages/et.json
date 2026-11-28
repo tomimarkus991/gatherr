@@ -67,5 +67,11 @@
     "google_sign_in_failed": "Google sisselogimine ebaõnnestus",
     "share_link": "Jaga linki",
     "footer_privacy": "Privaatsuspoliitika",
-    "footer_terms": "Kasutustingimused"
+    "footer_terms": "Kasutustingimused",
+    "event_edit": "Muuda",
+    "event_edit_title": "Muuda üritust",
+    "event_edit_name": "Nimi",
+    "event_edit_description": "Kirjeldus",
+    "share_dialog_title": "Jaga seda üritust oma sõpradega",
+    "share_dialog_button": "Jaga"
 }

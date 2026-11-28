@@ -22,8 +22,9 @@ export const useUpdateEvent = () => {
 
 	return useMutation({
 		mutationFn,
-		onSuccess: () => {
+		onSuccess: (_, { shortId }) => {
 			queryClient.invalidateQueries({ queryKey: ["/events/mine"] });
+			queryClient.invalidateQueries({ queryKey: ["events", shortId] });
 		},
 	});
 };

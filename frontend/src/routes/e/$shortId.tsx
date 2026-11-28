@@ -1,14 +1,16 @@
 /** biome-ignore-all lint/correctness/useExhaustiveDependencies: <useEffect> */
 /** biome-ignore-all lint/style/noNonNullAssertion: <explanation> */
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { UsersRound } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Pencil, UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { GoogleIcon } from "../../components/icons/GoogleIcon";
 import { GradientIcon } from "../../components/icons/GradientIcon";
 import { Button } from "../../components/ui/button";
 import { CopyLinkButton } from "../../components/ui/CopyLinkButton";
+import { EditEventDialog } from "../../components/ui/pages/event/EditEventDialog";
 import { HeatmapTabs } from "../../components/ui/pages/event/HeatmapTabs";
+import { ShareEventDialog } from "../../components/ui/pages/event/ShareEventDialog";
 import { Skeleton } from "../../components/ui/skeleton";
 import { UserButton } from "../../components/ui/UserButton";
 import { useGoogleAuth } from "../../hooks/mutation/useGoogleAuth";
@@ -19,17 +21,26 @@ import { cn } from "../../lib/utils";
 import { m } from "../../paraglide/messages";
 
 export const Route = createFileRoute("/e/$shortId")({
+	// `fromCreate` is set only by the create flow, to open the share prompt once.
+	validateSearch: (search: Record<string, unknown>): { fromCreate?: true } =>
+		search.fromCreate === true || search.fromCreate === "true" ? { fromCreate: true } : {},
 	component: RouteComponent,
 });
 
 function RouteComponent() {
 	const { shortId } = Route.useParams();
+	const { fromCreate } = Route.useSearch();
+	const navigate = useNavigate({ from: Route.fullPath });
 	const { data: event, isLoading } = useGetEvent(shortId);
 	const { data: me } = useGetMe();
 	const handleLogin = useGoogleAuth();
 	const { mutate: respond, isPending: isSaving } = useRespondToEvent(shortId);
 
 	const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
+	const [isEditOpen, setIsEditOpen] = useState(false);
+
+	// Replace, not push, so a reload or the back button never reopens the share prompt.
+	const closeSharePrompt = () => navigate({ search: {}, replace: true });
 
 	const handleSave = () => {
 		const allTimes = event?.details.times ?? [];
@@ -54,20 +65,49 @@ function RouteComponent() {
 	return (
 		<main className="max-w-md m-auto pt-5 px-4 sm:px-0">
 			{/* navbar */}
-			<div className="flex flex-row justify-between mb-12 mx-4">
-				<div>
-					{isLoading ? (
-						<Skeleton className="h-9 w-48 mb-2" />
-					) : (
-						<p className="text-3xl mb-2 font-viking">{event?.details.name}</p>
-					)}
-
-					<CopyLinkButton shortId={shortId} text />
-				</div>
-				<div>
-					<UserButton />
-				</div>
+			<div className="flex flex-row justify-between items-center mb-8 mx-4">
+				<Link to="/" className="flex flex-row items-center gap-3 w-fit">
+					<img src="/fireplace.svg" alt="" className="h-10" />
+					<span className="font-viking text-3xl">Gatherr</span>
+				</Link>
+				<UserButton />
 			</div>
+			{/* event title */}
+			<div className="mb-12 mx-4">
+				<div className="flex flex-row items-start justify-between gap-3 mb-2">
+					<p className="text-3xl font-viking break-words min-w-0">{event.details.name}</p>
+					{me && event.details.creatorId === me.id && (
+						<Button
+							size="xs"
+							variant="dark"
+							className="shrink-0"
+							onClick={() => setIsEditOpen(true)}
+						>
+							<Pencil className="size-4 mr-2" />
+							{m.event_edit()}
+						</Button>
+					)}
+				</div>
+				{event.details.description && (
+					<p className="text-info mb-3 whitespace-pre-line break-words">
+						{event.details.description}
+					</p>
+				)}
+				<CopyLinkButton shortId={shortId} text />
+			</div>
+			<EditEventDialog
+				shortId={shortId}
+				name={event.details.name ?? ""}
+				description={event.details.description ?? ""}
+				open={isEditOpen}
+				onOpenChange={setIsEditOpen}
+			/>
+			<ShareEventDialog
+				shortId={shortId}
+				eventName={event.details.name ?? ""}
+				open={!!fromCreate}
+				onOpenChange={open => !open && closeSharePrompt()}
+			/>
 			{/* welcome */}
 			{me ? (
 				// <div className="p-4 mb-12 rounded-2xl bg-linear-to-tr from-primary from-5% to-secondary">

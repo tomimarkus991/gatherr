@@ -53,6 +53,9 @@ const BASE = "/api/v1";
   }).then(r => console.log('deleted, status:', r.status)))
  */
 
+/** The API returns the creator as `creatorId` (EventResponseDto), not the nested user. */
+const toEventDto = (event: Event) => ({ ...event, creatorId: event.creator.id });
+
 // ── Auth state ───────────────────────────────────────────────────────────────
 let isLoggedIn = false;
 const activeUser: User = ME;
@@ -223,7 +226,7 @@ export const handlers = [
 	http.get(`${BASE}/events/:shortId`, ({ params }) => {
 		const event = EVENTS.find(e => e.shortId === params.shortId && !e.isDeleted);
 		if (!event) return new HttpResponse(null, { status: 404 });
-		return HttpResponse.json(event);
+		return HttpResponse.json(toEventDto(event));
 	}),
 
 	// ── PATCH /events/:shortId ────────────────────────────────────────────────
@@ -232,7 +235,7 @@ export const handlers = [
 		if (!event) return new HttpResponse(null, { status: 404 });
 		const body = (await request.json()) as Partial<Event>;
 		Object.assign(event, body, { updatedAt: new Date().toISOString() });
-		return HttpResponse.json(event);
+		return HttpResponse.json(toEventDto(event));
 	}),
 
 	// ── DELETE /events/:shortId/respond (leave) ───────────────────────────────
