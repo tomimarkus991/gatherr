@@ -34,7 +34,7 @@ class GoogleCalendarServiceTest {
     void requestsOnlyTheCalendarListAndFreeBusyScopes() {
         assertThat(GoogleCalendarService.SCOPES).containsExactly(
                 CalendarScopes.CALENDAR_CALENDARLIST_READONLY,
-                CalendarScopes.CALENDAR_FREEBUSY);
+                CalendarScopes.CALENDAR_EVENTS_FREEBUSY);
         assertThat(GoogleCalendarService.SCOPES).doesNotContain(CalendarScopes.CALENDAR_READONLY);
     }
 
