@@ -19,7 +19,11 @@ import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.CalendarScopes;
 import com.google.api.services.calendar.model.CalendarListEntry;
-import com.google.api.services.calendar.model.Events;
+import com.google.api.services.calendar.model.FreeBusyCalendar;
+import com.google.api.services.calendar.model.FreeBusyRequest;
+import com.google.api.services.calendar.model.FreeBusyRequestItem;
+import com.google.api.services.calendar.model.FreeBusyResponse;
+import com.google.api.services.calendar.model.TimePeriod;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +46,21 @@ public class GoogleCalendarService {
     private static final GsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private static final String APPLICATION_NAME = "Gatherr";
 
+    /**
+     * The narrowest scopes the import needs: the calendar list for the picker, and free/busy times.
+     * Gatherr never sees event titles or details. Tokens granted for the older calendar.readonly scope
+     * also cover both calls, so existing connections keep working.
+     */
+    static final List<String> SCOPES = List.of(
+            CalendarScopes.CALENDAR_CALENDARLIST_READONLY,
+            CalendarScopes.CALENDAR_FREEBUSY);
+
+    /** Google's freebusy query accepts at most 50 calendars. */
+    static final int MAX_CALENDARS_PER_QUERY = 50;
+
+    /** Keeps each freebusy query well inside the time range Google allows. */
+    static final Duration MAX_QUERY_RANGE = Duration.ofDays(30);
+
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String clientId;
 
@@ -60,7 +79,7 @@ public class GoogleCalendarService {
     private final CalendarOAuthState oauthState;
 
     /**
-     * Builds the Google consent-screen URL requesting calendar.readonly scope.
+     * Builds the Google consent-screen URL requesting {@link #SCOPES}.
      * The frontend redirects the user to this URL. The signed state tells the callback who the user is,
      * because Google's redirect back carries no bearer token.
      */
@@ -122,9 +141,10 @@ public class GoogleCalendarService {
     }
 
     /**
-     * Fetches events from the selected calendars across the Gatherr event's slots,
+     * Asks Google for the busy times of the selected calendars across the Gatherr event's slots,
      * then returns the slots that overlap any of them.
      *
+     * Google's freebusy query already leaves out entries marked "Free" and invitations the user declined.
      * Slots are read in the event's timezone and work for every event type: date-only and weekday
      * slots cover the whole day, weekday slots stand for their next occurrence (see {@link SlotWindows}).
      * Only slots from the event's own {@code times} list are returned.
@@ -142,7 +162,7 @@ public class GoogleCalendarService {
             SlotWindows.of(slot, zone, event.getTimeIncrement(), today)
                     .ifPresent(window -> slotWindows.put(slot, window));
         }
-        if (slotWindows.isEmpty()) return new BusySlotsDto(List.of());
+        if (slotWindows.isEmpty() || calendarIds.isEmpty()) return new BusySlotsDto(List.of());
 
         Instant rangeStart = slotWindows.values().stream().map(SlotWindows.Window::start).min(Instant::compareTo).orElseThrow();
         Instant rangeEnd = slotWindows.values().stream().map(SlotWindows.Window::end).max(Instant::compareTo).orElseThrow();
@@ -150,27 +170,59 @@ public class GoogleCalendarService {
         Calendar service = buildCalendarService(userId);
 
         List<SlotWindows.Window> busyWindows = new ArrayList<>();
-        for (String calendarId : calendarIds) {
-            Events result = service.events().list(calendarId)
-                    .setTimeMin(new com.google.api.client.util.DateTime(rangeStart.toEpochMilli()))
-                    .setTimeMax(new com.google.api.client.util.DateTime(rangeEnd.toEpochMilli()))
-                    .setSingleEvents(true)
-                    .setOrderBy("startTime")
-                    .execute();
+        for (int i = 0; i < calendarIds.size(); i += MAX_CALENDARS_PER_QUERY) {
+            List<FreeBusyRequestItem> items = calendarIds
+                    .subList(i, Math.min(i + MAX_CALENDARS_PER_QUERY, calendarIds.size()))
+                    .stream()
+                    .map(id -> new FreeBusyRequestItem().setId(id))
+                    .toList();
 
-            if (result.getItems() == null) continue;
-            for (com.google.api.services.calendar.model.Event gcalEvent : result.getItems()) {
-                SlotWindows.Window window = extractWindow(gcalEvent, zone);
-                if (window != null) busyWindows.add(window);
+            for (Instant from = rangeStart; from.isBefore(rangeEnd); from = from.plus(MAX_QUERY_RANGE)) {
+                Instant to = from.plus(MAX_QUERY_RANGE).isBefore(rangeEnd) ? from.plus(MAX_QUERY_RANGE) : rangeEnd;
+                FreeBusyResponse response = service.freebusy().query(new FreeBusyRequest()
+                                .setTimeMin(new com.google.api.client.util.DateTime(from.toEpochMilli()))
+                                .setTimeMax(new com.google.api.client.util.DateTime(to.toEpochMilli()))
+                                .setItems(items))
+                        .execute();
+                busyWindows.addAll(busyWindows(response, userId));
             }
         }
 
-        List<String> busySlots = slotWindows.entrySet().stream()
+        return new BusySlotsDto(overlappingSlots(slotWindows, busyWindows));
+    }
+
+    /**
+     * Reads the busy periods out of a freebusy response. A calendar Google reports an error for
+     * (for example one the user can no longer read) is skipped and logged, not fatal.
+     */
+    static List<SlotWindows.Window> busyWindows(FreeBusyResponse response, Long userId) {
+        if (response.getCalendars() == null) return List.of();
+
+        List<SlotWindows.Window> windows = new ArrayList<>();
+        for (Map.Entry<String, FreeBusyCalendar> entry : response.getCalendars().entrySet()) {
+            FreeBusyCalendar calendar = entry.getValue();
+            if (calendar.getErrors() != null && !calendar.getErrors().isEmpty()) {
+                log.warn("[GoogleCalendar] Skipping calendar for userId={}: {}", userId,
+                        calendar.getErrors().get(0).getReason());
+                continue;
+            }
+            if (calendar.getBusy() == null) continue;
+            for (TimePeriod period : calendar.getBusy()) {
+                if (period.getStart() == null || period.getEnd() == null) continue;
+                windows.add(new SlotWindows.Window(
+                        Instant.ofEpochMilli(period.getStart().getValue()),
+                        Instant.ofEpochMilli(period.getEnd().getValue())));
+            }
+        }
+        return windows;
+    }
+
+    /** The slots, in the event's order, that overlap at least one busy window. */
+    static List<String> overlappingSlots(Map<String, SlotWindows.Window> slotWindows, List<SlotWindows.Window> busyWindows) {
+        return slotWindows.entrySet().stream()
                 .filter(entry -> busyWindows.stream().anyMatch(entry.getValue()::overlaps))
                 .map(Map.Entry::getKey)
                 .toList();
-
-        return new BusySlotsDto(busySlots);
     }
 
     /**
@@ -209,28 +261,6 @@ public class GoogleCalendarService {
         return token.getAccessToken();
     }
 
-    /**
-     * Extracts a start/end window from a Google Calendar event. All-day events carry only dates,
-     * which are read as whole days in the Gatherr event's timezone.
-     */
-    private SlotWindows.Window extractWindow(com.google.api.services.calendar.model.Event gcalEvent, ZoneId zone) {
-        com.google.api.services.calendar.model.EventDateTime start = gcalEvent.getStart();
-        com.google.api.services.calendar.model.EventDateTime end   = gcalEvent.getEnd();
-        if (start == null || end == null) return null;
-
-        if (start.getDateTime() != null && end.getDateTime() != null) {
-            return new SlotWindows.Window(
-                    Instant.ofEpochMilli(start.getDateTime().getValue()),
-                    Instant.ofEpochMilli(end.getDateTime().getValue()));
-        }
-        if (start.getDate() != null && end.getDate() != null) {
-            return new SlotWindows.Window(
-                    LocalDate.parse(start.getDate().toStringRfc3339()).atStartOfDay(zone).toInstant(),
-                    LocalDate.parse(end.getDate().toStringRfc3339()).atStartOfDay(zone).toInstant());
-        }
-        return null;
-    }
-
     private GoogleAuthorizationCodeFlow buildFlow() throws GeneralSecurityException, IOException {
         GoogleClientSecrets.Details details = new GoogleClientSecrets.Details()
                 .setClientId(clientId)
@@ -241,7 +271,7 @@ public class GoogleCalendarService {
                 new NetHttpTransport(),
                 JSON_FACTORY,
                 secrets,
-                List.of(CalendarScopes.CALENDAR_READONLY)
+                SCOPES
         ).build();
     }
 
