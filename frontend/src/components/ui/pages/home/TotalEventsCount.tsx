@@ -49,7 +49,7 @@ export const TotalEventsCount = ({ className, variant = "line" }: Props) => {
 
 	return (
 		<p data-testid="total-events-count" className={className ?? "text-info text-sm text-center"}>
-			{m.home_total_events({ count: data.totalEvents })}
+			{m.home_total_events({ count: celebratedTotal(data.totalEvents) })}
 		</p>
 	);
 };

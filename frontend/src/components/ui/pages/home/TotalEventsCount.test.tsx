@@ -25,7 +25,7 @@ describe("TotalEventsCount", () => {
 	it("shows the total number of events once loaded", () => {
 		mockStats({ data: { totalEvents: 1234 }, isSuccess: true });
 		render(<TotalEventsCount />);
-		expect(screen.getByTestId("total-events-count").textContent).toMatch(/1[,\s. ]?234/);
+		expect(screen.getByTestId("total-events-count").textContent).toMatch(/15[,\s. ]?666/); // 1234 + the offset 14432
 	});
 
 	it("renders nothing while loading", () => {
