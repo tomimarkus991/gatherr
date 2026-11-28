@@ -52,9 +52,9 @@ function PrivacyPolicy() {
 					<li>
 						We ask for two narrow, read-only permissions: the list of your calendars (
 						<code>calendar.calendarlist.readonly</code>), so you can pick which ones to use, and
-						your free/busy times (<code>calendar.freebusy</code>). We cannot see your calendar
-						entries, their titles or their details, and we never create, change or delete anything
-						in your calendar.
+						your free/busy times (<code>calendar.events.freebusy</code>). We cannot see your
+						calendar entries, their titles or their details, and we never create, change or delete
+						anything in your calendar.
 					</li>
 					<li>
 						We ask Google for your busy times only when you press "Import from Google Calendar", and

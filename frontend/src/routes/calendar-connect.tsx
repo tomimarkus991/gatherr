@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { z } from "zod";
+import { readCalendarConnectReturn } from "../lib/calendarConnectReturn";
 
 // Google redirects to /calendar-connect?success=true or ?error=...
 // after the backend stores the tokens and issues its own redirect to the frontend.
+// The router parses `success=true` as the boolean true, so accept both forms.
 const searchSchema = z.object({
-	success: z.string().optional(),
+	success: z.union([z.boolean(), z.string()]).optional(),
 	error: z.string().optional(),
 });
 
@@ -19,18 +21,17 @@ function CalendarConnectPage() {
 	const navigate = useNavigate();
 
 	useEffect(() => {
-		// Auto-navigate back after a moment so the user lands back in context.
-		// In practice the user likely had the respond page open before clicking connect,
-		// so going back (-1) is the right UX. Adjust if your flow differs.
+		// Auto-navigate back to the event page the user connected from.
+		const returnTo = readCalendarConnectReturn();
 		const timer = setTimeout(() => {
-			navigate({ to: "/", replace: true });
+			navigate({ href: returnTo, replace: true });
 		}, 2500);
 		return () => clearTimeout(timer);
 	}, [navigate]);
 
 	return (
 		<main className="m-auto max-w-md flex flex-col items-center justify-center min-h-screen gap-4 px-6">
-			{success ? (
+			{success === true || success === "true" ? (
 				<>
 					<span className="text-5xl">🗓️</span>
 					<p className="text-xl font-semibold text-center">Google Calendar connected!</p>

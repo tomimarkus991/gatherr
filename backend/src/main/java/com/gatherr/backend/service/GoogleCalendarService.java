@@ -48,12 +48,13 @@ public class GoogleCalendarService {
 
     /**
      * The narrowest scopes the import needs: the calendar list for the picker, and free/busy times.
-     * Gatherr never sees event titles or details. Tokens granted for the older calendar.readonly scope
-     * also cover both calls, so existing connections keep working.
+     * Gatherr never sees event titles or details. calendar.events.freebusy covers every calendar the
+     * user can access; calendar.freebusy ("your calendars") made Google answer notFound for calendars
+     * picked from the list.
      */
     static final List<String> SCOPES = List.of(
             CalendarScopes.CALENDAR_CALENDARLIST_READONLY,
-            CalendarScopes.CALENDAR_FREEBUSY);
+            CalendarScopes.CALENDAR_EVENTS_FREEBUSY);
 
     /** Google's freebusy query accepts at most 50 calendars. */
     static final int MAX_CALENDARS_PER_QUERY = 50;
@@ -202,7 +203,7 @@ public class GoogleCalendarService {
         for (Map.Entry<String, FreeBusyCalendar> entry : response.getCalendars().entrySet()) {
             FreeBusyCalendar calendar = entry.getValue();
             if (calendar.getErrors() != null && !calendar.getErrors().isEmpty()) {
-                log.warn("[GoogleCalendar] Skipping calendar for userId={}: {}", userId,
+                log.warn("[GoogleCalendar] Skipping calendar {} for userId={}: {}", entry.getKey(), userId,
                         calendar.getErrors().get(0).getReason());
                 continue;
             }
