@@ -58,6 +58,8 @@
     "event_tab_yours": "Sinu saadavus",
     "event_tab_group": "Grupi saadavus",
     "event_save": "Salvesta",
+    "event_scroll_left": "Keri vasakule",
+    "event_scroll_right": "Keri paremale",
     "home_event_creator": "Looja",
     "home_event_joined": "Liitunud",
     "home_event_waiting": "Ootab vastuseid",
