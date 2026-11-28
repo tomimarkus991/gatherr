@@ -25,6 +25,14 @@ This project uses [Vitest](https://vitest.dev/) for testing. You can run the tes
 npm run test
 ```
 
+### End-to-end tests
+
+`npm run test:e2e` starts its own dev server on port 3100, and the TanStack devtools event bus listens on 42069. To run e2e in two checkouts at once, give each its own ports:
+
+```bash
+PW_PORT=3101 DEVTOOLS_PORT=42070 npm run test:e2e
+```
+
 ## Styling
 
 This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
