@@ -9,6 +9,18 @@ npm install
 npm run dev
 ```
 
+## Testing on a phone
+
+The share sheet (`navigator.share`) only works over HTTPS. To try it on a phone on the same Wi-Fi:
+
+```bash
+npm run dev:lan
+```
+
+This serves the app over HTTPS with a self-signed certificate on every network interface. Open the `Network:` URL Vite prints (e.g. `https://192.168.1.20:3000`) on the phone and accept the certificate warning. `npm run dev` stays plain HTTP on localhost.
+
+Google sign-in won't work from the LAN origin as-is. Either run in mock mode (`VITE_ENABLE_MOCK=true` in `.env.local`) or add the `https://<lan-ip>:3000` origin to the Google OAuth client's authorized JavaScript origins.
+
 # Building For Production
 
 To build this application for production:

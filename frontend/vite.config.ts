@@ -3,6 +3,7 @@ import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import tailwindcss from "@tailwindcss/vite";
 import { devtools } from "@tanstack/devtools-vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import basicSsl from "@vitejs/plugin-basic-ssl";
 import viteReact from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 import { configDefaults } from "vitest/config";
@@ -25,7 +26,12 @@ const devLinks: Plugin = {
 	},
 };
 
+// `npm run dev:lan` sets DEV_LAN: HTTPS with a self-signed cert on every interface, so a phone on
+// the same Wi-Fi can open it and use navigator.share. Plain `npm run dev` stays HTTP on localhost.
+const lan = process.env.DEV_LAN === "true";
+
 const config = defineConfig({
+	server: lan ? { host: true } : undefined,
 	plugins: [
 		devLinks,
 		// The devtools event bus listens on its own port; DEVTOOLS_PORT lets two dev servers run at once.
@@ -49,6 +55,7 @@ const config = defineConfig({
 				plugins: ["babel-plugin-react-compiler"],
 			},
 		}),
+		lan && basicSsl(),
 	],
 	test: {
 		// e2e/ holds Playwright specs, run with `npm run test:e2e`.
