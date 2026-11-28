@@ -342,8 +342,17 @@ export interface components {
 			name?: string;
 			profilePicture?: string;
 		};
+		BusySlotDetailDto: {
+			slot?: string;
+			calendars?: string[];
+			/** Format: date-time */
+			start?: string;
+			/** Format: date-time */
+			end?: string;
+		};
 		BusySlotsDto: {
 			busySlots?: string[];
+			busyDetails?: components["schemas"]["BusySlotDetailDto"][];
 		};
 	};
 	responses: never;

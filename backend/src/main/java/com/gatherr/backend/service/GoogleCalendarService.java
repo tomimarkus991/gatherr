@@ -1,5 +1,6 @@
 package com.gatherr.backend.service;
 
+import com.gatherr.backend.dto.calendar.BusySlotDetailDto;
 import com.gatherr.backend.dto.calendar.BusySlotsDto;
 import com.gatherr.backend.dto.calendar.CalendarListDto;
 import com.gatherr.backend.dto.calendar.CalendarSummaryDto;
@@ -35,9 +36,11 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.*;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -148,7 +151,9 @@ public class GoogleCalendarService {
      * Google's freebusy query already leaves out entries marked "Free" and invitations the user declined.
      * Slots are read in the event's timezone and work for every event type: date-only and weekday
      * slots cover the whole day, weekday slots stand for their next occurrence (see {@link SlotWindows}).
-     * Only slots from the event's own {@code times} list are returned.
+     * Only slots from the event's own {@code times} list are returned. Each busy slot also gets a detail:
+     * the names of the calendars busy in it (from the calendar list, falling back to the ID) and when.
+     * Nothing is stored.
      */
     public BusySlotsDto getBusySlots(Long userId, String shortId, List<String> calendarIds)
             throws GeneralSecurityException, IOException {
@@ -163,14 +168,14 @@ public class GoogleCalendarService {
             SlotWindows.of(slot, zone, event.getTimeIncrement(), today)
                     .ifPresent(window -> slotWindows.put(slot, window));
         }
-        if (slotWindows.isEmpty() || calendarIds.isEmpty()) return new BusySlotsDto(List.of());
+        if (slotWindows.isEmpty() || calendarIds.isEmpty()) return new BusySlotsDto(List.of(), List.of());
 
         Instant rangeStart = slotWindows.values().stream().map(SlotWindows.Window::start).min(Instant::compareTo).orElseThrow();
         Instant rangeEnd = slotWindows.values().stream().map(SlotWindows.Window::end).max(Instant::compareTo).orElseThrow();
 
         Calendar service = buildCalendarService(userId);
 
-        List<SlotWindows.Window> busyWindows = new ArrayList<>();
+        List<BusyPeriod> busyPeriods = new ArrayList<>();
         for (int i = 0; i < calendarIds.size(); i += MAX_CALENDARS_PER_QUERY) {
             List<FreeBusyRequestItem> items = calendarIds
                     .subList(i, Math.min(i + MAX_CALENDARS_PER_QUERY, calendarIds.size()))
@@ -185,24 +190,58 @@ public class GoogleCalendarService {
                                 .setTimeMax(new com.google.api.client.util.DateTime(to.toEpochMilli()))
                                 .setItems(items))
                         .execute();
-                busyWindows.addAll(busyWindows(response, userId));
+                busyPeriods.addAll(busyPeriods(response, userId));
             }
         }
 
-        List<String> busySlots = overlappingSlots(slotWindows, busyWindows);
+        List<BusySlotDetailDto> details = busyDetails(slotWindows, busyPeriods, calendarNames(service, calendarIds, userId));
+        List<String> busySlots = details.stream().map(BusySlotDetailDto::slot).toList();
         log.info("[GoogleCalendar] Busy import userId={} event={} calendars={} range={}..{} busyPeriods={} matchedSlots={}",
-                userId, shortId, calendarIds.size(), rangeStart, rangeEnd, busyWindows.size(), busySlots.size());
-        return new BusySlotsDto(busySlots);
+                userId, shortId, calendarIds.size(), rangeStart, rangeEnd, busyPeriods.size(), busySlots.size());
+        return new BusySlotsDto(busySlots, details);
+    }
+
+    /** A busy period Google reported for one calendar. */
+    record BusyPeriod(String calendarId, SlotWindows.Window window) {}
+
+    /**
+     * Display names for the requested calendars, in request order: the calendar list's summary, or the ID
+     * when the list has none or can't be read. The names only explain busy slots, so a failed lookup is
+     * logged and never fails the import.
+     */
+    private Map<String, String> calendarNames(Calendar service, List<String> calendarIds, Long userId) {
+        Map<String, String> summaries = new LinkedHashMap<>();
+        try {
+            List<CalendarListEntry> entries = service.calendarList().list()
+                    .setMinAccessRole("reader")
+                    .execute()
+                    .getItems();
+            if (entries != null) {
+                for (CalendarListEntry entry : entries) {
+                    if (entry.getId() != null && entry.getSummary() != null) summaries.put(entry.getId(), entry.getSummary());
+                }
+            }
+        } catch (IOException e) {
+            log.warn("[GoogleCalendar] Could not read calendar names for userId={}: {}", userId, e.getMessage());
+        }
+        return calendarNames(calendarIds, summaries);
+    }
+
+    /** Maps each requested calendar ID to its summary, falling back to the ID, keeping request order. */
+    static Map<String, String> calendarNames(List<String> calendarIds, Map<String, String> summaries) {
+        Map<String, String> names = new LinkedHashMap<>();
+        for (String id : calendarIds) names.put(id, summaries.getOrDefault(id, id));
+        return names;
     }
 
     /**
      * Reads the busy periods out of a freebusy response. A calendar Google reports an error for
      * (for example one the user can no longer read) is skipped and logged, not fatal.
      */
-    static List<SlotWindows.Window> busyWindows(FreeBusyResponse response, Long userId) {
+    static List<BusyPeriod> busyPeriods(FreeBusyResponse response, Long userId) {
         if (response.getCalendars() == null) return List.of();
 
-        List<SlotWindows.Window> windows = new ArrayList<>();
+        List<BusyPeriod> periods = new ArrayList<>();
         for (Map.Entry<String, FreeBusyCalendar> entry : response.getCalendars().entrySet()) {
             FreeBusyCalendar calendar = entry.getValue();
             if (calendar.getErrors() != null && !calendar.getErrors().isEmpty()) {
@@ -213,20 +252,47 @@ public class GoogleCalendarService {
             if (calendar.getBusy() == null) continue;
             for (TimePeriod period : calendar.getBusy()) {
                 if (period.getStart() == null || period.getEnd() == null) continue;
-                windows.add(new SlotWindows.Window(
+                periods.add(new BusyPeriod(entry.getKey(), new SlotWindows.Window(
                         Instant.ofEpochMilli(period.getStart().getValue()),
-                        Instant.ofEpochMilli(period.getEnd().getValue())));
+                        Instant.ofEpochMilli(period.getEnd().getValue()))));
             }
         }
-        return windows;
+        return periods;
     }
 
-    /** The slots, in the event's order, that overlap at least one busy window. */
-    static List<String> overlappingSlots(Map<String, SlotWindows.Window> slotWindows, List<SlotWindows.Window> busyWindows) {
-        return slotWindows.entrySet().stream()
-                .filter(entry -> busyWindows.stream().anyMatch(entry.getValue()::overlaps))
-                .map(Map.Entry::getKey)
-                .toList();
+    /**
+     * The slots, in the event's order, that overlap at least one busy period, each with the names of the
+     * calendars busy in it and the busy time overlapping it: the earliest start and latest end among the
+     * overlapping periods. Calendars are listed in {@code names} order; an ID missing from it is shown as is.
+     */
+    static List<BusySlotDetailDto> busyDetails(Map<String, SlotWindows.Window> slotWindows,
+                                               List<BusyPeriod> busyPeriods,
+                                               Map<String, String> names) {
+        List<String> order = new ArrayList<>(names.keySet());
+        Comparator<String> byRequestOrder = Comparator.comparingInt(id -> {
+            int index = order.indexOf(id);
+            return index == -1 ? Integer.MAX_VALUE : index;
+        });
+
+        List<BusySlotDetailDto> details = new ArrayList<>();
+        for (Map.Entry<String, SlotWindows.Window> slot : slotWindows.entrySet()) {
+            List<BusyPeriod> overlapping = busyPeriods.stream()
+                    .filter(period -> slot.getValue().overlaps(period.window()))
+                    .toList();
+            if (overlapping.isEmpty()) continue;
+
+            List<String> calendars = overlapping.stream()
+                    .map(BusyPeriod::calendarId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .sorted(byRequestOrder)
+                    .map(id -> names.getOrDefault(id, id))
+                    .toList();
+            Instant start = overlapping.stream().map(p -> p.window().start()).min(Instant::compareTo).orElseThrow();
+            Instant end = overlapping.stream().map(p -> p.window().end()).max(Instant::compareTo).orElseThrow();
+            details.add(new BusySlotDetailDto(slot.getKey(), calendars, start, end));
+        }
+        return details;
     }
 
     /**
