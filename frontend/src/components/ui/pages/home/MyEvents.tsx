@@ -22,9 +22,8 @@ export const MyEvents = () => {
 
 	return (
 		<>
-			{hasEvents && <TotalEventsCount className="text-info text-sm text-center mt-8" />}
 			{hasEvents ? (
-				<div className="flex flex-col space-y-4 bg-canvas rounded-xl px-6 py-6 mt-4 mx-4">
+				<div className="flex flex-col space-y-4 bg-canvas rounded-xl px-6 py-6 mt-8 mx-4">
 					{myEvents.map(event => {
 						const isCreator = me?.id === event.creatorId;
 

@@ -4,20 +4,19 @@
     "create_pick_time_range_text": "Vajuta ja lohista valimiseks",
     "create_advanced": "Täpsemalt",
     "create_time_increment_label": "Ajasamm:",
-    "create_time_increment_description": "Määrab valitavate ajavahemike vahelise sammu",
-    "create_remove_time_ranges_hint": "Kui soovid ainult kuupäevi, vajuta seda",
-    "create_remove_time_ranges": "Eemalda kellajad",
-    "create_add_time_ranges_hint": "Kui soovid lisada kellajad, vajuta seda",
-    "create_add_time_ranges": "Lisa kellajad",
+    "create_time_increment_example": "{increment} min: {slots}",
     "create_event_button": "Loo üritus",
     "create_sign_in_title": "Logi sisse ürituse loomiseks",
     "create_continue_with_google": "Jätka Googlega",
     "create_google_calendar_hint_1": "See võimaldab sul saada ka",
     "create_google_calendar_hint_2": "oma Google kalendri sündmused",
     "create_timezone": "Ajatsoon",
+    "navbar_home_link": "Gatherr avaleht",
     "development": "See funktsionaalsus on hetkel arenduses",
-    "choose_event_type_dates_and_times": "Kuupäevad",
+    "choose_event_type_dates": "Kuupäevad",
+    "choose_event_type_dates_with_times": "Kuupäevad + kellaajad",
     "choose_event_type_weekdays": "Nädalapäevad",
+    "choose_event_type_weekdays_with_times": "Nädalapäevad + kellaajad",
     "choose_event_type_dates_title": "Millised kuupäevad sobivad?",
     "choose_event_type_dates_text": "Kliki kuupäevade valimiseks",
     "choose_event_type_days_title": "Millised päevad sobivad?",
@@ -59,6 +58,8 @@
     "event_tab_yours": "Sinu saadavus",
     "event_tab_group": "Grupi saadavus",
     "event_save": "Salvesta",
+    "event_scroll_left": "Keri vasakule",
+    "event_scroll_right": "Keri paremale",
     "home_event_creator": "Looja",
     "home_event_joined": "Liitunud",
     "home_event_waiting": "Ootab vastuseid",
@@ -85,6 +86,16 @@
             "match": {
                 "countPlural=one": "Seni on loodud {countFormatted} üritus",
                 "countPlural=other": "Seni on loodud {countFormatted} üritust"
+            }
+        }
+    ],
+    "home_total_events_label": [
+        {
+            "declarations": ["input count", "local countPlural = count: plural"],
+            "selectors": ["countPlural"],
+            "match": {
+                "countPlural=one": "üritus on seni loodud",
+                "countPlural=other": "üritust on seni loodud"
             }
         }
     ],
@@ -137,6 +148,10 @@
     "event_edit_description": "Kirjeldus",
     "share_dialog_title": "Jaga seda üritust oma sõpradega",
     "share_dialog_button": "Jaga",
+    "share_copy_link": "Kopeeri link",
+    "share_whatsapp": "Jaga WhatsAppis",
+    "share_telegram": "Jaga Telegramis",
+    "share_messenger": "Jaga Messengeris",
     "event_confirm_button": "Kinnita {when}",
     "event_confirm_success": "Lõplik aeg kinnitatud. Osalejad saavad e-kirjaga kutse.",
     "event_confirm_forbidden": "Aega saab kinnitada ainult korraldaja",

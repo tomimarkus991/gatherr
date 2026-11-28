@@ -2,7 +2,7 @@ import { createEvent, expect, test } from "./fixtures";
 
 test("signed-in organiser creates an event from the home page", async ({ signedIn: page }) => {
 	await createEvent(page, "Game night");
-	await expect(page.getByRole("button", { name: "Share link" })).toBeVisible();
+	await expect(page.getByRole("button", { name: "Copy link" })).toBeVisible();
 });
 
 test("create button stays disabled until the event has a name", async ({ page }) => {

@@ -4,20 +4,19 @@
   "create_pick_time_range_text": "Press and drag to select",
   "create_advanced": "Advanced",
   "create_time_increment_label": "Time increment:",
-  "create_time_increment_description": "Controls the spacing between selectable time slots",
-  "create_remove_time_ranges_hint": "If you wish to only have dates press this",
-  "create_remove_time_ranges": "Remove time ranges",
-  "create_add_time_ranges_hint": "If you wish to also have times press this",
-  "create_add_time_ranges": "Add time ranges",
+  "create_time_increment_example": "{increment} min: {slots}",
   "create_event_button": "Create Event",
   "create_sign_in_title": "Sign in to create event",
   "create_continue_with_google": "Continue with Google",
   "create_google_calendar_hint_1": "This also allows you to get",
   "create_google_calendar_hint_2": "your google calendar events",
   "create_timezone": "Timezone",
+  "navbar_home_link": "Gatherr home",
   "development": "This functionality is in development",
-  "choose_event_type_dates_and_times": "Dates",
+  "choose_event_type_dates": "Dates",
+  "choose_event_type_dates_with_times": "Dates + times",
   "choose_event_type_weekdays": "Weekdays",
+  "choose_event_type_weekdays_with_times": "Weekdays + times",
   "choose_event_type_dates_title": "What dates might work?",
   "choose_event_type_dates_text": "Press to select days",
   "choose_event_type_days_title": "What days might work?",
@@ -59,6 +58,8 @@
   "event_tab_yours": "Your availability",
   "event_tab_group": "Group availability",
   "event_save": "Save",
+  "event_scroll_left": "Scroll left",
+  "event_scroll_right": "Scroll right",
   "home_event_creator": "Creator",
   "home_event_joined": "Joined",
   "home_event_waiting": "Waiting for responses",
@@ -85,6 +86,16 @@
       "match": {
         "countPlural=one": "{countFormatted} event created so far",
         "countPlural=other": "{countFormatted} events created so far"
+      }
+    }
+  ],
+  "home_total_events_label": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "event created so far",
+        "countPlural=other": "events created so far"
       }
     }
   ],
@@ -137,6 +148,10 @@
   "event_edit_description": "Description",
   "share_dialog_title": "Share this event with your friends",
   "share_dialog_button": "Share",
+  "share_copy_link": "Copy link",
+  "share_whatsapp": "Share on WhatsApp",
+  "share_telegram": "Share on Telegram",
+  "share_messenger": "Share on Messenger",
   "event_confirm_button": "Confirm {when}",
   "event_confirm_success": "Final time confirmed. Participants get an email invite.",
   "event_confirm_forbidden": "Only the organiser can confirm a time",

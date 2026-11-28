@@ -4,6 +4,8 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Navbar } from "../components/ui/navbar";
 import { MyEvents } from "../components/ui/pages/home/MyEvents";
+import { TotalEventsCount } from "../components/ui/pages/home/TotalEventsCount";
+import { useGetMyEvents } from "../hooks/query/useGetMyEvents";
 import { m } from "../paraglide/messages";
 
 export const Route = createFileRoute("/")({ component: App });
@@ -11,6 +13,9 @@ export const Route = createFileRoute("/")({ component: App });
 function App() {
 	const [name, setName] = useState("");
 	const navigate = useNavigate();
+	// Signed in with events: the counter moves from under the hero to its own card at the bottom
+	const { data: myEvents } = useGetMyEvents();
+	const hasEvents = !!myEvents?.length;
 
 	return (
 		<main className="m-auto max-w-md">
@@ -37,6 +42,7 @@ function App() {
 						{m.home_create_button()}
 					</Button>
 				</div>
+				{hasEvents && <TotalEventsCount variant="celebrate" />}
 			</div>
 			<footer className="flex flex-row justify-center gap-6 pb-8">
 				<Link to="/privacy" className="text-info text-sm underline">
