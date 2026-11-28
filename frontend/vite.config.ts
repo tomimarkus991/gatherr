@@ -28,7 +28,8 @@ const devLinks: Plugin = {
 const config = defineConfig({
 	plugins: [
 		devLinks,
-		devtools(),
+		// The devtools event bus listens on its own port; DEVTOOLS_PORT lets two dev servers run at once.
+		devtools({ eventBusConfig: { port: Number(process.env.DEVTOOLS_PORT) || 42069 } }),
 		paraglideVitePlugin({
 			project: "./project.inlang",
 			outdir: "./src/paraglide",
