@@ -7,6 +7,10 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
+import com.gatherr.backend.model.enums.EventRound;
+import com.gatherr.backend.model.enums.EventType;
+
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -67,6 +71,15 @@ public class Event {
     @Column(name = "confirmed_end")
     private OffsetDateTime confirmedEnd;
 
+    /** The date the organiser picked for the time round; null until the time round starts. */
+    @Column(name = "time_round_date")
+    private LocalDate timeRoundDate;
+
+    /** The event's dates ({@code ddMMyyyy}) from the date round, kept read-only once the time round starts. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "date_times", columnDefinition = "jsonb")
+    private List<String> dateTimes;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
@@ -74,4 +87,12 @@ public class Event {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
+
+    /** Derived from the stored state: TIME once a date is picked, DATE for a dates-only event, else none. */
+    public EventRound getRound() {
+        if (timeRoundDate != null) {
+            return EventRound.TIME;
+        }
+        return type == EventType.SPECIFIC_DATES ? EventRound.DATE : null;
+    }
 }

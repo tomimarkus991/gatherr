@@ -163,5 +163,15 @@
     "blocked_slot_confirm_text": "Sul on siin kohustus ({calendars}, {time}). Kas märgid end ikkagi vabaks?",
     "blocked_slot_confirm_text_unknown": "Sul on siin kohustus. Kas märgid end ikkagi vabaks?",
     "blocked_slot_confirm_yes": "Märgi vabaks",
-    "blocked_slot_confirm_no": "Tühista"
+    "blocked_slot_confirm_no": "Tühista",
+    "event_time_round_pick": "Vali sellele kuupäevale kellaaeg",
+    "event_time_round_start_time": "Algus",
+    "event_time_round_end_time": "Lõpp",
+    "event_time_round_increment": "Samm",
+    "event_time_round_hint": "Seejärel märgivad kõik kellaajad päeval {day}. Päevade hääletusse tagasi minna ei saa.",
+    "event_time_round_start": "Alusta kellaaja valimist",
+    "event_time_round_success": "Kellaaja valimine algas. Osalejad saavad e-kirja.",
+    "event_time_round_failed": "Kellaaja valimist ei õnnestunud alustada. Proovi uuesti.",
+    "event_time_round_title": "Vali kellaaeg päeval",
+    "event_day_votes_title": "Päevade hääled"
 }

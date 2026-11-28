@@ -34,6 +34,10 @@ export interface Event {
 	confirmedAt?: string;
 	confirmedStart?: string;
 	confirmedEnd?: string;
+	/** Two-step events (#94): the date picked for the time round, "yyyy-MM-dd". Unset in the date round. */
+	timeRoundDate?: string;
+	/** The date round's dates ("DDMMYYYY"), kept once the time round starts. */
+	dateTimes?: string[];
 	createdAt: string; // ISO 8601
 	updatedAt: string; // ISO 8601
 }
@@ -59,6 +63,8 @@ export interface SummaryUserResponse {
 export interface SummaryResponse {
 	users: SummaryUserResponse[];
 	slots: SummarySlot[];
+	/** Set once the time round has started: the date round's votes, read-only. */
+	dateRound: { respondentCount: number; slots: SummarySlot[] } | null;
 }
 
 export interface EventUser {
@@ -67,6 +73,9 @@ export interface EventUser {
 	user: Pick<User, "id" | "name" | "email" | "profilePicture">;
 	available: string[];
 	notAvailable: string[];
+	/** Date-round answers, kept when the time round starts. */
+	dateAvailable?: string[];
+	dateNotAvailable?: string[];
 	createdAt: string; // ISO 8601
 	updatedAt: string; // ISO 8601
 }

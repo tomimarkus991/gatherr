@@ -36,6 +36,22 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	"/events/{shortId}/time-round": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		post: operations["startTimeRound"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 	"/events/{shortId}/confirm": {
 		parameters: {
 			query?: never;
@@ -269,6 +285,18 @@ export interface components {
 			confirmedStart?: string;
 			/** Format: date-time */
 			confirmedEnd?: string;
+			/** @enum {string} */
+			round?: "DATE" | "TIME";
+			/** Format: date */
+			timeRoundDate?: string;
+			dateTimes?: string[];
+		};
+		StartTimeRoundDto: {
+			date: string;
+			startTime: string;
+			endTime: string;
+			/** Format: int32 */
+			timeIncrement: number;
 		};
 		ConfirmEventDto: {
 			slot: string;
@@ -316,9 +344,15 @@ export interface components {
 			/** Format: int64 */
 			totalEvents?: number;
 		};
+		DateRoundSummaryDto: {
+			/** Format: int32 */
+			respondentCount?: number;
+			slots?: components["schemas"]["SlotSummaryDto"][];
+		};
 		EventSummaryDto: {
 			users?: components["schemas"]["EventUserDto"][];
 			slots?: components["schemas"]["SlotSummaryDto"][];
+			dateRound?: components["schemas"]["DateRoundSummaryDto"];
 		};
 		EventUserDto: {
 			user?: components["schemas"]["UserInfo"];
@@ -417,6 +451,32 @@ export interface operations {
 		requestBody: {
 			content: {
 				"application/json": components["schemas"]["CreateEventDto"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"*/*": components["schemas"]["EventResponseDto"];
+				};
+			};
+		};
+	};
+	startTimeRound: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				shortId: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["StartTimeRoundDto"];
 			};
 		};
 		responses: {

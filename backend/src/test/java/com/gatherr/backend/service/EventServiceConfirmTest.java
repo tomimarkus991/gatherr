@@ -59,7 +59,7 @@ class EventServiceConfirmTest {
     @BeforeEach
     void setUp() {
         eventService = new EventService(eventRepository, eventUserRepository, userRepository,
-                confirmationMailService, Clock.fixed(NOW, ZoneOffset.UTC));
+                confirmationMailService, null, Clock.fixed(NOW, ZoneOffset.UTC));
 
         organiser = User.builder().id(1L).name("Olivia Organiser").email("olivia@example.com").build();
         participant = User.builder().id(2L).name("Pat Participant").email("pat@example.com").build();

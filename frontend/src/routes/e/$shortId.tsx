@@ -2,12 +2,15 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <explanation> */
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Pencil, UsersRound } from "lucide-react";
+import { format } from "date-fns";
+import { ClockIcon, Pencil, UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { GoogleIcon } from "../../components/icons/GoogleIcon";
 import { GradientIcon } from "../../components/icons/GradientIcon";
 import { Button } from "../../components/ui/button";
+import { dateFnsLocale } from "../../components/ui/pages/create/calendar/Calendar";
 import { ConfirmedTime } from "../../components/ui/pages/event/ConfirmedTime";
+import { DayVotes } from "../../components/ui/pages/event/DayVotes";
 import { EditEventDialog } from "../../components/ui/pages/event/EditEventDialog";
 import { HeatmapTabs } from "../../components/ui/pages/event/HeatmapTabs";
 import { ShareEventDialog } from "../../components/ui/pages/event/ShareEventDialog";
@@ -100,6 +103,22 @@ function RouteComponent() {
 						confirmedEnd={event.details.confirmedEnd}
 						eventTimezone={event.details.timezone ?? "UTC"}
 					/>
+				)}
+				{event.details.timeRoundDate && (
+					<div
+						data-testid="time-round-date"
+						className="flex flex-row items-center gap-3 p-4 mb-3 rounded-xl bg-canvas"
+					>
+						<ClockIcon className="size-6 shrink-0 text-primary" />
+						<div>
+							<p className="text-sm text-info">{m.event_time_round_title()}</p>
+							<p className="text-lg font-semibold">
+								{format(new Date(`${event.details.timeRoundDate}T00:00:00`), "EEEE d MMMM", {
+									locale: dateFnsLocale,
+								})}
+							</p>
+						</div>
+					</div>
 				)}
 				<ShareLinkPanel
 					shortId={shortId}
@@ -232,6 +251,8 @@ function RouteComponent() {
 					</p>
 				</div>
 			)}
+
+			{event.summary.dateRound && <DayVotes dateRound={event.summary.dateRound} />}
 
 			<HeatmapTabs
 				shortId={shortId}

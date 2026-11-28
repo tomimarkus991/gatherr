@@ -163,5 +163,15 @@
   "blocked_slot_confirm_text": "You're busy here ({calendars}, {time}). Mark yourself available anyway?",
   "blocked_slot_confirm_text_unknown": "You're busy here. Mark yourself available anyway?",
   "blocked_slot_confirm_yes": "Mark available",
-  "blocked_slot_confirm_no": "Cancel"
+  "blocked_slot_confirm_no": "Cancel",
+  "event_time_round_pick": "Pick a time for this date",
+  "event_time_round_start_time": "Start time",
+  "event_time_round_end_time": "End time",
+  "event_time_round_increment": "Increment",
+  "event_time_round_hint": "Everyone then marks times on {day}. You can't go back to voting on days.",
+  "event_time_round_start": "Start time round",
+  "event_time_round_success": "Time round started. Participants get an email.",
+  "event_time_round_failed": "Couldn't start the time round. Try again.",
+  "event_time_round_title": "Pick a time on",
+  "event_day_votes_title": "Day votes"
 }

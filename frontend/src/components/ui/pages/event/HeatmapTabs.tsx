@@ -30,6 +30,7 @@ import { BlockedSlotDialog, BlockedSlotTooltip } from "./BlockedSlot";
 import { type BusySlotDetail, CalendarImport } from "./CalendarImport";
 import { ConfirmSlotButton } from "./ConfirmSlotButton";
 import { HeatmapScroll } from "./HeatmapScroll";
+import { StartTimeRoundForm } from "./StartTimeRoundForm";
 
 interface TwoElementMovingBoxProps {
 	selectedIndex: number;
@@ -579,6 +580,15 @@ export const HeatmapTabs = ({
 																onConfirmed={() => setOpenSlot(null)}
 															/>
 														)}
+														{me &&
+															event?.details.creatorId === me.id &&
+															event?.details.round === "DATE" && (
+																<StartTimeRoundForm
+																	shortId={shortId}
+																	date={realSlot}
+																	onStarted={() => setOpenSlot(null)}
+																/>
+															)}
 													</PopoverContent>
 												</Popover>
 											);

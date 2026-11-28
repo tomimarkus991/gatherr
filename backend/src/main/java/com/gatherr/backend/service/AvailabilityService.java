@@ -1,5 +1,6 @@
 package com.gatherr.backend.service;
 
+import com.gatherr.backend.dto.DateRoundSummaryDto;
 import com.gatherr.backend.dto.EventSummaryDto;
 import com.gatherr.backend.dto.EventUserDto;
 import com.gatherr.backend.dto.RespondDto;
@@ -8,6 +9,7 @@ import com.gatherr.backend.dto.SlotUserDto;
 import com.gatherr.backend.model.Event;
 import com.gatherr.backend.model.EventUser;
 import com.gatherr.backend.model.User;
+import com.gatherr.backend.model.enums.EventRound;
 import com.gatherr.backend.repository.EventRepository;
 import com.gatherr.backend.repository.EventUserRepository;
 import com.gatherr.backend.repository.UserRepository;
@@ -120,19 +122,41 @@ public class AvailabilityService {
         }
 
         List<String> eventTimes = event.getTimes() != null ? event.getTimes() : Collections.emptyList();
-        List<SlotSummaryDto> slots = new ArrayList<>(eventTimes.size());
-        for (String slot : eventTimes) {
+        List<SlotSummaryDto> slots = slotSummaries(eventTimes, eventUsers, normalizedAvailableByUser);
+
+        return new EventSummaryDto(users, slots, dateRoundSummary(event, eventUsers));
+    }
+
+    /** The date round's answers as kept when the time round started; null before that. */
+    private static DateRoundSummaryDto dateRoundSummary(Event event, List<EventUser> eventUsers) {
+        if (event.getRound() != EventRound.TIME || event.getDateTimes() == null) {
+            return null;
+        }
+        // Date slots have no time, so they need no timezone conversion.
+        List<Set<String>> dateAvailableByUser = eventUsers.stream()
+                .map(eu -> eu.getDateAvailable() == null ? Set.<String>of() : Set.copyOf(eu.getDateAvailable()))
+                .toList();
+        int respondentCount = (int) eventUsers.stream()
+                .filter(eu -> eu.getDateAvailable() != null || eu.getDateNotAvailable() != null)
+                .count();
+        return new DateRoundSummaryDto(respondentCount,
+                slotSummaries(event.getDateTimes(), eventUsers, dateAvailableByUser));
+    }
+
+    private static List<SlotSummaryDto> slotSummaries(
+            List<String> times, List<EventUser> eventUsers, List<Set<String>> availableByUser) {
+        List<SlotSummaryDto> slots = new ArrayList<>(times.size());
+        for (String slot : times) {
             List<SlotUserDto> slotUsers = new ArrayList<>();
             for (int i = 0; i < eventUsers.size(); i++) {
-                if (normalizedAvailableByUser.get(i).contains(slot)) {
+                if (availableByUser.get(i).contains(slot)) {
                     User u = eventUsers.get(i).getUser();
                     slotUsers.add(new SlotUserDto(u.getId(), u.getName()));
                 }
             }
             slots.add(new SlotSummaryDto(slot, slotUsers.size(), slotUsers));
         }
-
-        return new EventSummaryDto(users, slots);
+        return slots;
     }
 
     private static String normalizeSlot(String slot, ZoneId from, ZoneId to) {
