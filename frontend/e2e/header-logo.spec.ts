@@ -29,3 +29,16 @@ test("logo on the create page goes home", async ({ page }) => {
 	await page.getByRole("link", { name: "Gatherr home" }).click();
 	await expect(page).toHaveURL(/\/$/);
 });
+
+test("navbar wordmark sits in the centre with the fireplace on the left (375px)", async ({ page }) => {
+	await page.setViewportSize({ width: 375, height: 800 });
+	await page.goto("/create?name=Test");
+
+	const wordmark = page.getByRole("link", { name: "Gatherr home" });
+	const box = await wordmark.boundingBox();
+	const centre = box ? box.x + box.width / 2 : 0;
+	expect(Math.abs(centre - 375 / 2)).toBeLessThan(8);
+
+	const fireplace = await page.locator("nav img[src='/fireplace.svg']").boundingBox();
+	expect(fireplace?.x).toBeLessThan(60);
+});
