@@ -79,6 +79,10 @@
     "home_event_leave": "Lahku",
     "home_event_left": "Lahkusid üritusest",
     "home_event_coming_soon": "Tulemas",
+    "home_event_created": "Loodud {date}",
+    "home_event_status_decided": "Otsustatud",
+    "home_event_status_picking_time": "Kellaaja valik",
+    "home_event_status_open": "Avatud",
     "home_total_events": [
         {
             "declarations": ["input count", "local countPlural = count: plural", "local countFormatted = count: number"],

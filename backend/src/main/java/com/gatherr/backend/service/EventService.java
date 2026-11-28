@@ -32,6 +32,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
@@ -105,6 +106,9 @@ public class EventService {
         return eventUserRepository.findByUserIdAndEvent_IsDeletedFalse(userId)
             .stream()
             .map(eventUser -> EventResponseDto.from(eventUser.getEvent()))
+            // Newest first; rows without a creation time go last
+            .sorted(Comparator.comparing(EventResponseDto::createdAt,
+                    Comparator.nullsLast(Comparator.reverseOrder())))
             .toList();
     }
 

@@ -242,7 +242,10 @@ export const handlers = [
 		const myEventIds = new Set(
 			EVENT_USERS.filter(eu => eu.user.id === activeUser.id).map(eu => eu.event.id),
 		);
-		const mine = EVENTS.filter(e => myEventIds.has(e.id) && !e.isDeleted);
+		// Like EventService.getMyEvents(): newest first
+		const mine = EVENTS.filter(e => myEventIds.has(e.id) && !e.isDeleted)
+			.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+			.map(toEventDto);
 		return HttpResponse.json(mine);
 	}),
 	// ── GET /events/:shortId/summary ──────────────────────

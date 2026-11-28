@@ -18,9 +18,12 @@ export { expect };
  */
 export async function createEvent(page: Page, name: string) {
 	await page.goto("/");
-	await page.getByPlaceholder(/Team meeting/).fill(name);
-	await page.getByPlaceholder(/Team meeting/).press("Enter");
-	await expect(page).toHaveURL(/\/create\?name=/);
+	// Signed in, the create card moves into the event list once it loads; retry if Enter hit the old card
+	await expect(async () => {
+		await page.getByPlaceholder(/Team meeting/).fill(name);
+		await page.getByPlaceholder(/Team meeting/).press("Enter");
+		await expect(page).toHaveURL(/\/create\?name=/, { timeout: 2000 });
+	}).toPass();
 
 	// The month arrows have no label; the right chevron is the "next month" button.
 	await page.locator("button:has(svg.lucide-chevron-right)").first().click();

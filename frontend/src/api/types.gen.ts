@@ -290,6 +290,8 @@ export interface components {
 			/** Format: date */
 			timeRoundDate?: string;
 			dateTimes?: string[];
+			/** Format: date-time */
+			createdAt?: string;
 		};
 		StartTimeRoundDto: {
 			date: string;
