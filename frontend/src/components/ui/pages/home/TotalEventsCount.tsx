@@ -9,7 +9,7 @@ export const TotalEventsCount = ({ className }: { className?: string }) => {
 
 	return (
 		<p data-testid="total-events-count" className={className ?? "text-info text-sm text-center"}>
-			{m.home_total_events({ count: data.totalEvents.toLocaleString() })}
+			{m.home_total_events({ count: data.totalEvents })}
 		</p>
 	);
 };
