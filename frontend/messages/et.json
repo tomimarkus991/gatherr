@@ -91,5 +91,11 @@
     "event_edit_name": "Nimi",
     "event_edit_description": "Kirjeldus",
     "share_dialog_title": "Jaga seda üritust oma sõpradega",
-    "share_dialog_button": "Jaga"
+    "share_dialog_button": "Jaga",
+    "event_confirm_button": "Kinnita {when}",
+    "event_confirm_success": "Lõplik aeg kinnitatud. Osalejad saavad e-kirjaga kutse.",
+    "event_confirm_forbidden": "Aega saab kinnitada ainult korraldaja",
+    "event_confirm_failed": "Aega ei õnnestunud kinnitada. Proovi uuesti.",
+    "event_confirmed_title": "Lõplik aeg",
+    "event_confirmed_all_day": "terve päev"
 }

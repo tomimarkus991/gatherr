@@ -8,6 +8,7 @@ import { GoogleIcon } from "../../components/icons/GoogleIcon";
 import { GradientIcon } from "../../components/icons/GradientIcon";
 import { Button } from "../../components/ui/button";
 import { CopyLinkButton } from "../../components/ui/CopyLinkButton";
+import { ConfirmedTime } from "../../components/ui/pages/event/ConfirmedTime";
 import { EditEventDialog } from "../../components/ui/pages/event/EditEventDialog";
 import { HeatmapTabs } from "../../components/ui/pages/event/HeatmapTabs";
 import { ShareEventDialog } from "../../components/ui/pages/event/ShareEventDialog";
@@ -92,6 +93,13 @@ function RouteComponent() {
 					<p className="text-info mb-3 whitespace-pre-line break-words">
 						{event.details.description}
 					</p>
+				)}
+				{event.details.confirmedStart && event.details.confirmedEnd && (
+					<ConfirmedTime
+						confirmedStart={event.details.confirmedStart}
+						confirmedEnd={event.details.confirmedEnd}
+						eventTimezone={event.details.timezone ?? "UTC"}
+					/>
 				)}
 				<CopyLinkButton shortId={shortId} text />
 			</div>

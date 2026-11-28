@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../tabs";
 import { useIsMobile } from "../../useIsMobile";
 import { dateFnsLocale } from "../create/calendar/Calendar";
 import { CalendarImport } from "./CalendarImport";
+import { ConfirmSlotButton } from "./ConfirmSlotButton";
 
 interface TwoElementMovingBoxProps {
 	selectedIndex: number;
@@ -498,6 +499,14 @@ export const HeatmapTabs = ({
 																	</p>
 																))}
 															</div>
+														)}
+														{me && event?.details.creatorId === me.id && (
+															<ConfirmSlotButton
+																shortId={shortId}
+																slot={realSlot}
+																eventTimezone={eventTz}
+																onConfirmed={() => setOpenSlot(null)}
+															/>
 														)}
 													</PopoverContent>
 												</Popover>
