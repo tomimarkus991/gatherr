@@ -9,6 +9,7 @@
  * - `onView` starts it the first time the element scrolls into view.
  */
 import { useEffect, useRef, useState } from "react";
+import { cn } from "../../lib/utils";
 
 export const GLYPHS = {
 	kanji:
@@ -31,6 +32,11 @@ interface Props {
 	onView?: boolean;
 	/** Characters to scramble through. @default GLYPHS.kanji */
 	glyphs?: string;
+	/**
+	 * Classes for the visible text layer. A gradient clipped to the text (`text-gradient`) must go
+	 * here: `background-clip: text` on a parent skips this absolutely positioned layer.
+	 */
+	className?: string;
 }
 
 const scramble = (
@@ -58,6 +64,7 @@ export const LetterDecryptor = ({
 	delay = 0,
 	onView = false,
 	glyphs = GLYPHS.kanji,
+	className,
 }: Props) => {
 	const ref = useRef<HTMLSpanElement>(null);
 	const [shown, setShown] = useState(children);
@@ -115,7 +122,7 @@ export const LetterDecryptor = ({
 	return (
 		<span ref={ref} className="relative inline-block">
 			<span className="invisible">{children}</span>
-			<span aria-hidden className="absolute inset-0">
+			<span aria-hidden className={cn("absolute inset-0", className)}>
 				{shown}
 			</span>
 		</span>

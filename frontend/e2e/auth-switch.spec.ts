@@ -29,7 +29,8 @@ test("signing out and in again shows my events without a reload (#134)", async (
 	await expect(myEvent(page)).toBeVisible();
 
 	await signOutFromUserMenu(page);
-	await expect(page.getByText("Plan any gathering")).toBeVisible();
+	// The hero title decrypts in: its visible layer is the aria-hidden copy (LetterDecryptor).
+	await expect(page.locator("[aria-hidden]", { hasText: "Plan any gathering" })).toBeVisible();
 
 	await signInFromUserMenu(page);
 	await expect(myEvent(page)).toBeVisible();

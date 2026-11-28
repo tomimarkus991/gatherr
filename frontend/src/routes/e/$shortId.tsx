@@ -5,6 +5,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { ClockIcon, Pencil, UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ScrollFadeIn } from "../../components/animations/ScrollFadeIn";
 import { GoogleIcon } from "../../components/icons/GoogleIcon";
 import { GradientIcon } from "../../components/icons/GradientIcon";
 import { Button } from "../../components/ui/button";
@@ -77,7 +78,7 @@ function RouteComponent() {
 				<UserButton />
 			</div>
 			{/* event title */}
-			<div className="mb-12 mx-4">
+			<ScrollFadeIn from="left" className="mb-12 mx-4">
 				<div className="flex flex-row items-start justify-between gap-3 mb-2">
 					<p className="text-3xl font-viking break-words min-w-0">{event.details.name}</p>
 					{me && event.details.creatorId === me.id && (
@@ -125,7 +126,7 @@ function RouteComponent() {
 					eventName={event.details.name ?? ""}
 					className="max-w-md"
 				/>
-			</div>
+			</ScrollFadeIn>
 			<EditEventDialog
 				shortId={shortId}
 				name={event.details.name ?? ""}
@@ -146,7 +147,10 @@ function RouteComponent() {
 				// </div>
 				<div></div>
 			) : (
-				<div className="bg-canvas rounded-2xl p-8 flex flex-col items-center mb-8">
+				<ScrollFadeIn
+					from="right"
+					className="bg-canvas rounded-2xl p-8 flex flex-col items-center mb-8"
+				>
 					<p className="text-2xl mb-8">{m.event_sign_in_title()}</p>
 					<div className="mb-8">
 						<Button onClick={handleLogin} className="px-8">
@@ -164,11 +168,11 @@ function RouteComponent() {
 							{m.footer_terms()}
 						</Link>
 					</div>
-				</div>
+				</ScrollFadeIn>
 			)}
 
 			{/* participants */}
-			<div className="mb-12">
+			<ScrollFadeIn from="left" className="mb-12">
 				<div className="flex flex-row items-start mb-4">
 					<GradientIcon icon={UsersRound} className="size-6 mr-2.5" />
 					<div className="flex flex-row justify-between">
@@ -220,13 +224,13 @@ function RouteComponent() {
 						))
 					)}
 				</div>
-			</div>
+			</ScrollFadeIn>
 
 			{/* heatmap info */}
 			{isLoading ? (
 				<Skeleton className="h-12 w-full" />
 			) : (
-				<div className="mb-12 flex flex-row font-semibold">
+				<ScrollFadeIn from="right" className="mb-12 flex flex-row font-semibold">
 					<p className="flex-nowrap shrink-0 mr-2 font-number">
 						0 / {event?.summary.users?.length} {m.event_heatmap_info()}
 					</p>
@@ -249,7 +253,7 @@ function RouteComponent() {
 					<p className="flex-nowrap shrink-0 ml-2 font-number">
 						{event?.summary.users?.length} / {event?.summary.users?.length} {m.event_heatmap_info()}
 					</p>
-				</div>
+				</ScrollFadeIn>
 			)}
 
 			{event.summary.dateRound && <DayVotes dateRound={event.summary.dateRound} />}
