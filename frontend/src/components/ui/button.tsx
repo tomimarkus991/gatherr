@@ -7,6 +7,8 @@ export const buttonVariantColors = {
 	orange: ["text-content bg-primary border-[#894822]", "active:border-primary"],
 	red: ["text-content bg-secondary border-[#752102]", "active:border-secondary"],
 	dark: ["text-content bg-[#3a3733] border-[#0a0a08]", "active:border-[#3a3733]"],
+	// For the near-black page background, where dark's black edge disappears
+	gray: ["text-content bg-[#3a3733] border-[#5a5550]", "active:border-[#3a3733]"],
 	yellow: ["text-content bg-[#a17600] border-[#523d02]", "active:border-[#a17600]"],
 };
 
