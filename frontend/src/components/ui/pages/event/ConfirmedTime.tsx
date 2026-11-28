@@ -16,10 +16,18 @@ export const ConfirmedTime = ({ confirmedStart, confirmedEnd, eventTimezone }: P
 	const start = new Date(confirmedStart);
 	const end = new Date(confirmedEnd);
 	const options = { locale: dateFnsLocale };
-	const day = formatInTimeZone(start, eventTimezone, "EEEE d MMMM", options);
 	const allDay =
 		end.getTime() - start.getTime() >= DAY_MS &&
 		formatInTimeZone(start, eventTimezone, "HH:mm") === "00:00";
+	// A confirmed trip range spans several days: show its first and last day.
+	const lastDay = formatInTimeZone(
+		new Date(end.getTime() - 1),
+		eventTimezone,
+		"EEEE d MMMM",
+		options,
+	);
+	const firstDay = formatInTimeZone(start, eventTimezone, "EEEE d MMMM", options);
+	const day = allDay && lastDay !== firstDay ? `${firstDay} – ${lastDay}` : firstDay;
 	const time = allDay
 		? m.event_confirmed_all_day()
 		: `${formatInTimeZone(start, eventTimezone, "HH:mm")}–${formatInTimeZone(end, eventTimezone, "HH:mm")}`;

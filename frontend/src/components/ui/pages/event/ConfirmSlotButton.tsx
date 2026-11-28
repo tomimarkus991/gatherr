@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { CalendarCheckIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import { useConfirmEvent } from "../../../../hooks/mutation/useConfirmEvent";
+import { formatRange, isRangeKey } from "../../../../lib/dateRange";
 import { parseSlot, WEEKDAYS } from "../../../../lib/timezone";
 import { m } from "../../../../paraglide/messages";
 import { Button } from "../../button";
@@ -16,8 +17,12 @@ interface Props {
 	onConfirmed: () => void;
 }
 
-/** A slot key as readable text in the event timezone: "19:00, Wed 13 May", "Mon", "Wed 13 May". */
+/**
+ * A slot key as readable text in the event timezone: "19:00, Wed 13 May", "Mon", "Wed 13 May",
+ * or for a trip range "Tue 1 – Thu 3 Dec".
+ */
 export function readableSlot(slot: string): string {
+	if (isRangeKey(slot)) return formatRange(slot, dateFnsLocale);
 	const { time, day } = parseSlot(slot);
 	const weekday = WEEKDAYS.indexOf(day as (typeof WEEKDAYS)[number]);
 	const dayText =

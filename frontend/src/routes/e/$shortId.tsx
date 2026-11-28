@@ -15,6 +15,7 @@ import { DayVotes } from "../../components/ui/pages/event/DayVotes";
 import { EditEventDialog } from "../../components/ui/pages/event/EditEventDialog";
 import { HeatmapTabs } from "../../components/ui/pages/event/HeatmapTabs";
 import { ShareEventDialog } from "../../components/ui/pages/event/ShareEventDialog";
+import { TripVotes } from "../../components/ui/pages/event/TripVotes";
 import { ShareLinkPanel } from "../../components/ui/ShareLinkPanel";
 import { Skeleton } from "../../components/ui/skeleton";
 import { UserButton } from "../../components/ui/UserButton";
@@ -66,6 +67,7 @@ function RouteComponent() {
 
 	if (isLoading) return null;
 	if (!event) return <p>Not found</p>;
+	const isTrip = event.details.type === "DATE_RANGES";
 
 	return (
 		<main className="max-w-md m-auto pt-5 px-4 sm:px-0">
@@ -217,7 +219,9 @@ function RouteComponent() {
 								<div>
 									<p className="text-xl">{user?.name}</p>
 									<p className="text-sm text-info">
-										{m.event_time_slots({ count: available?.length ?? 0 })}
+										{isTrip
+											? m.event_trip_answers({ count: available?.length ?? 0 })
+											: m.event_time_slots({ count: available?.length ?? 0 })}
 									</p>
 								</div>
 							</div>
@@ -227,7 +231,7 @@ function RouteComponent() {
 			</ScrollFadeIn>
 
 			{/* heatmap info */}
-			{isLoading ? (
+			{isTrip ? null : isLoading ? (
 				<Skeleton className="h-12 w-full" />
 			) : (
 				<ScrollFadeIn from="right" className="mb-12 flex flex-row font-semibold">
@@ -258,13 +262,23 @@ function RouteComponent() {
 
 			{event.summary.dateRound && <DayVotes dateRound={event.summary.dateRound} />}
 
-			<HeatmapTabs
-				shortId={shortId}
-				selectedSlots={selectedSlots}
-				setSelectedSlots={setSelectedSlots}
-				onSave={handleSave}
-				isSaving={isSaving}
-			/>
+			{isTrip ? (
+				<TripVotes
+					shortId={shortId}
+					selectedSlots={selectedSlots}
+					setSelectedSlots={setSelectedSlots}
+					onSave={handleSave}
+					isSaving={isSaving}
+				/>
+			) : (
+				<HeatmapTabs
+					shortId={shortId}
+					selectedSlots={selectedSlots}
+					setSelectedSlots={setSelectedSlots}
+					onSave={handleSave}
+					isSaving={isSaving}
+				/>
+			)}
 		</main>
 	);
 }

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -81,10 +82,17 @@ public class ConfirmationMailService {
         }
     }
 
-    /** For example "Tuesday, 31 March 2026, 09:00–09:30 (Europe/Tallinn)". */
+    /**
+     * For example "Tuesday, 31 March 2026, 09:00–09:30 (Europe/Tallinn)", or for a trip
+     * "Tuesday, 1 December 2026 – Thursday, 3 December 2026, all day (Europe/Tallinn)".
+     */
     static String describeWhen(ConfirmedSlot slot) {
         String zone = " (" + slot.start().getZone().getId() + ")";
         if (slot.allDay()) {
+            LocalDate lastDay = slot.end().toLocalDate().minusDays(1);
+            if (lastDay.isAfter(slot.start().toLocalDate())) {
+                return DAY.format(slot.start()) + " – " + DAY.format(lastDay) + ", all day" + zone;
+            }
             return DAY.format(slot.start()) + ", all day" + zone;
         }
         if (slot.start().toLocalDate().equals(slot.end().toLocalDate())) {

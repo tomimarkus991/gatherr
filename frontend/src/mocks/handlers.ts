@@ -2,6 +2,7 @@ import { addDays, format } from "date-fns";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { HttpResponse, http } from "msw";
 import type { components } from "../api/types.gen";
+import { parseRangeKey } from "../lib/dateRange";
 import { parseSlot, WEEKDAYS } from "../lib/timezone";
 import {
 	busyCalendarsFor,
@@ -34,9 +35,24 @@ const BASE = "/api/v1";
 /**
  * Start and end of a confirmed slot, like the backend's SlotTimes: a timed slot lasts one time
  * increment, a slot without a time is the whole day. Weekday slots use the next such weekday,
- * today included unless a timed slot has already started. Null if the slot is malformed.
+ * today included unless a timed slot has already started. A trip's date range runs from its first
+ * day to the day after its last day. Null if the slot is malformed.
  */
 function confirmedRange(event: Event, slot: string): { start: string; end: string } | null {
+	if (event.type === "DATE_RANGES") {
+		const range = parseRangeKey(slot);
+		if (!range) return null;
+		return {
+			start: fromZonedTime(
+				format(range.start, "yyyy-MM-dd'T'00:00:00"),
+				event.timezone,
+			).toISOString(),
+			end: fromZonedTime(
+				format(addDays(range.end, 1), "yyyy-MM-dd'T'00:00:00"),
+				event.timezone,
+			).toISOString(),
+		};
+	}
 	const { time, day } = parseSlot(slot);
 	const now = new Date();
 	let date: string;
@@ -422,6 +438,7 @@ export const handlers = [
 			times: body.times ?? [],
 			timeIncrement: body.timeIncrement ?? 30,
 			timezone: body.timezone ?? ME.timezone,
+			rangeDetails: body.rangeDetails,
 			isDeleted: false,
 			respondedCount: 0,
 			createdAt: new Date().toISOString(),

@@ -132,6 +132,17 @@ class ConfirmationMailServiceTest {
     }
 
     @Test
+    void multiDayAllDaySlot_isDescribedAsARange() {
+        ConfirmedSlot slot = new ConfirmedSlot(
+                ZonedDateTime.of(2026, 12, 1, 0, 0, 0, 0, ZoneId.of("Europe/Tallinn")),
+                ZonedDateTime.of(2026, 12, 4, 0, 0, 0, 0, ZoneId.of("Europe/Tallinn")),
+                true);
+
+        assertThat(ConfirmationMailService.describeWhen(slot))
+                .isEqualTo("Tuesday, 1 December 2026 – Thursday, 3 December 2026, all day (Europe/Tallinn)");
+    }
+
+    @Test
     void sendFailure_isLogged_doesNotThrow_andOtherRecipientsStillGetMail(CapturedOutput output) {
         ConfirmationMailService service = serviceWithSender();
         doThrow(new MailSendException("SMTP down"))

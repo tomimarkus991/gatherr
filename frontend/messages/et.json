@@ -177,5 +177,45 @@
     "event_time_round_success": "Kellaaja valimine algas. Osalejad saavad e-kirja.",
     "event_time_round_failed": "Kellaaja valimist ei õnnestunud alustada. Proovi uuesti.",
     "event_time_round_title": "Vali kellaaeg päeval",
-    "event_day_votes_title": "Päevade hääled"
+    "event_day_votes_title": "Päevade hääled",
+    "choose_event_type_trip": "Reis",
+    "create_trip_title": "Millised kuupäevad võiksid sobida?",
+    "create_trip_text": "Vali alguspäev, siis lõpupäev. Lisa nii palju valikuid kui soovid.",
+    "create_trip_pick_end": "Nüüd vali lõpupäev. Ühepäevase reisi jaoks vajuta sama päeva uuesti.",
+    "create_trip_ranges_title": "Kuupäevavalikud",
+    "create_trip_days": [
+        {
+            "declarations": ["input count", "local countPlural = count: plural"],
+            "selectors": ["countPlural"],
+            "match": {
+                "countPlural=one": "{count} päev",
+                "countPlural=other": "{count} päeva"
+            }
+        }
+    ],
+    "create_trip_label_placeholder": "Silt (valikuline), nt Rooma, Ryanair 89 €",
+    "create_trip_link_placeholder": "Link (valikuline), https://…",
+    "create_trip_link_invalid": "Link peab algama http:// või https://",
+    "create_trip_remove_range": "Eemalda {range}",
+    "create_trip_range_exists": "See kuupäevavalik on juba lisatud",
+    "event_trip_title": "Millised kuupäevad sulle sobivad?",
+    "event_trip_text": "Vasta iga kuupäevavaliku kohta Jah või Ei ja salvesta",
+    "event_trip_yes": "Jah",
+    "event_trip_no": "Ei",
+    "event_trip_open_link": "Ava link",
+    "event_trip_results_title": "Grupi tulemused",
+    "event_trip_results_text": "Mitu inimest vastas igale kuupäevavalikule Jah",
+    "event_trip_best": "Parim",
+    "event_trip_yes_count": "{count} / {total} jah",
+    "event_trip_nobody_yet": "Keegi pole veel jah vastanud",
+    "event_trip_answers": [
+        {
+            "declarations": ["input count", "local countPlural = count: plural"],
+            "selectors": ["countPlural"],
+            "match": {
+                "countPlural=one": "Jah {count} kuupäevavalikule",
+                "countPlural=other": "Jah {count} kuupäevavalikule"
+            }
+        }
+    ]
 }

@@ -341,3 +341,15 @@ databaseChangeLog:
               - column:
                   name: date_not_available
                   type: JSONB
+
+  # 11. TRIP EVENTS: OPTIONAL LABEL AND LINK PER DATE RANGE (issue #148)
+  - changeSet:
+      id: 011-add-range-details
+      author: gatherr
+      changes:
+        - addColumn:
+            tableName: events
+            columns:
+              - column:
+                  name: range_details
+                  type: JSONB

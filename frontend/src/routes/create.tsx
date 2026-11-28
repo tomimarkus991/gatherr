@@ -18,6 +18,7 @@ import {
 import { Navbar } from "../components/ui/navbar";
 import { ChooseEventTypeSlider } from "../components/ui/pages/create/ChooseEventTypeSlider";
 import { END_TIME, START_TIME, TimeSlider } from "../components/ui/pages/create/TimeSlider";
+import { isValidTripLink, type TripRange } from "../components/ui/pages/create/TripRangePicker";
 import {
 	Select,
 	SelectContent,
@@ -50,6 +51,7 @@ interface Draft {
 	endTime: number;
 	timeIncrement: number;
 	timezone: string;
+	tripRanges?: TripRange[];
 }
 
 function loadDraft(): Draft | null {
@@ -83,16 +85,7 @@ function Create() {
 		if (user && pendingCreate) {
 			setPendingCreate(false);
 			setIsLoginModalOpen(false);
-			createEvent(
-				{
-					name,
-					type: eventType,
-					times: calculateTimes() ?? [],
-					timeIncrement,
-					timezone,
-				},
-				{ onSuccess: clearDraft },
-			);
+			createEvent(eventPayload(), { onSuccess: clearDraft });
 		}
 	}, [user, pendingCreate]);
 
@@ -116,6 +109,7 @@ function Create() {
 	const [eventType, setEventType] = useState<EventType>(
 		draft?.eventType ?? "SPECIFIC_DATES_AND_TIMES",
 	);
+	const [tripRanges, setTripRanges] = useState<TripRange[]>(draft?.tripRanges ?? []);
 
 	useEffect(() => {
 		saveDraft({
@@ -126,8 +120,18 @@ function Create() {
 			endTime,
 			timeIncrement,
 			timezone,
+			tripRanges,
 		});
-	}, [eventType, calendarSelectedDates, selectedDays, startTime, endTime, timeIncrement, timezone]);
+	}, [
+		eventType,
+		calendarSelectedDates,
+		selectedDays,
+		startTime,
+		endTime,
+		timeIncrement,
+		timezone,
+		tripRanges,
+	]);
 
 	const hasTimes = eventType === "SPECIFIC_DATES_AND_TIMES" || eventType === "WEEKDAYS_AND_TIMES";
 
@@ -138,6 +142,7 @@ function Create() {
 	 * SPECIFIC_DATES           → ["DDMMyyyy", ...]       ["31032026", "01042026"]
 	 * WEEKDAYS_AND_TIMES       → ["HHmm-DDD", ...]       ["0900-MON", "0930-MON", "0900-TUE"]
 	 * WEEKDAYS                 → ["DDD", ...]            ["MON", "TUE", "FRI"]
+	 * DATE_RANGES              → ["DDMMyyyy-DDMMyyyy", ...] ["01122026-03122026", "14122026-18122026"]
 	 */
 	const calculateTimes = () => {
 		if (eventType === "SPECIFIC_DATES_AND_TIMES") {
@@ -165,6 +170,8 @@ function Create() {
 			return dates;
 		} else if (eventType === "WEEKDAYS") {
 			return selectedDays;
+		} else if (eventType === "DATE_RANGES") {
+			return tripRanges.map(range => range.key);
 		} else if (eventType === "WEEKDAYS_AND_TIMES") {
 			const times = [];
 
@@ -182,6 +189,26 @@ function Create() {
 		}
 	};
 
+	/** A trip's labels and links by range key; only ranges that have one. */
+	const rangeDetails = () => {
+		const details = Object.fromEntries(
+			tripRanges
+				.map(range => ({ key: range.key, label: range.label.trim(), link: range.link.trim() }))
+				.filter(({ label, link }) => label || link)
+				.map(({ key, label, link }) => [key, { ...(label && { label }), ...(link && { link }) }]),
+		);
+		return Object.keys(details).length > 0 ? details : undefined;
+	};
+
+	const eventPayload = () => ({
+		name,
+		type: eventType,
+		times: calculateTimes() ?? [],
+		timeIncrement,
+		timezone,
+		...(eventType === "DATE_RANGES" && { rangeDetails: rangeDetails() }),
+	});
+
 	return (
 		<main className="max-w-md m-auto px-4 sm:px-0">
 			<div className="mb-12">
@@ -196,6 +223,8 @@ function Create() {
 					setSelectedDays={setSelectedDays}
 					eventType={eventType}
 					setEventType={setEventType}
+					tripRanges={tripRanges}
+					setTripRanges={setTripRanges}
 				/>
 			</ScrollFadeIn>
 			<div>
@@ -286,7 +315,9 @@ function Create() {
 						((eventType === "SPECIFIC_DATES" || eventType === "SPECIFIC_DATES_AND_TIMES") &&
 							calendarSelectedDates.length === 0) ||
 						((eventType === "WEEKDAYS" || eventType === "WEEKDAYS_AND_TIMES") &&
-							selectedDays.length === 0)
+							selectedDays.length === 0) ||
+						(eventType === "DATE_RANGES" &&
+							(tripRanges.length === 0 || tripRanges.some(range => !isValidTripLink(range.link))))
 					}
 					onClick={() => {
 						if (!user) {
@@ -294,16 +325,7 @@ function Create() {
 							setIsLoginModalOpen(true);
 							return;
 						}
-						createEvent(
-							{
-								name,
-								type: eventType,
-								times: calculateTimes() ?? [],
-								timeIncrement,
-								timezone,
-							},
-							{ onSuccess: clearDraft },
-						);
+						createEvent(eventPayload(), { onSuccess: clearDraft });
 					}}
 				>
 					{m.create_event_button()}

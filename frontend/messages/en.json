@@ -177,5 +177,45 @@
   "event_time_round_success": "Time round started. Participants get an email.",
   "event_time_round_failed": "Couldn't start the time round. Try again.",
   "event_time_round_title": "Pick a time on",
-  "event_day_votes_title": "Day votes"
+  "event_day_votes_title": "Day votes",
+  "choose_event_type_trip": "Trip",
+  "create_trip_title": "Which dates could work?",
+  "create_trip_text": "Pick a start day, then an end day. Add as many options as you like.",
+  "create_trip_pick_end": "Now pick the end day. Tap the same day again for a one-day trip.",
+  "create_trip_ranges_title": "Date options",
+  "create_trip_days": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} day",
+        "countPlural=other": "{count} days"
+      }
+    }
+  ],
+  "create_trip_label_placeholder": "Label (optional), e.g. Rome, Ryanair €89",
+  "create_trip_link_placeholder": "Link (optional), https://…",
+  "create_trip_link_invalid": "Use a link that starts with http:// or https://",
+  "create_trip_remove_range": "Remove {range}",
+  "create_trip_range_exists": "That date option is already added",
+  "event_trip_title": "Which dates suit you?",
+  "event_trip_text": "Answer Yes or No for each date option, then save",
+  "event_trip_yes": "Yes",
+  "event_trip_no": "No",
+  "event_trip_open_link": "Open link",
+  "event_trip_results_title": "Group results",
+  "event_trip_results_text": "How many said Yes to each date option",
+  "event_trip_best": "Best",
+  "event_trip_yes_count": "{count} / {total} yes",
+  "event_trip_nobody_yet": "No one has said yes yet",
+  "event_trip_answers": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Yes to {count} date option",
+        "countPlural=other": "Yes to {count} date options"
+      }
+    }
+  ]
 }

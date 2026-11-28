@@ -13,6 +13,7 @@ import com.gatherr.backend.model.enums.EventType;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "events")
@@ -79,6 +80,11 @@ public class Event {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "date_times", columnDefinition = "jsonb")
     private List<String> dateTimes;
+
+    /** Trip events: optional label and link per range key; null for other types (issue #148). */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "range_details", columnDefinition = "jsonb")
+    private Map<String, RangeDetail> rangeDetails;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
