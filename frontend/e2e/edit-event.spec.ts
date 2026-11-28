@@ -22,8 +22,16 @@ test("creator edits the event name and description", async ({ signedIn: page }) 
 	await expect(dialog.getByLabel("Description")).toHaveValue("Bring a favourite poem");
 });
 
-test("visitor who is not the creator sees no Edit button", async ({ page }) => {
+test("signed-out visitor sees no Edit button", async ({ page }) => {
 	await page.goto("/e/game-night");
 	await expect(page.getByText("Game Night", { exact: true })).toBeVisible();
+	await expect(page.getByRole("button", { name: "Edit" })).toHaveCount(0);
+});
+
+test("signed-in user who is not the creator sees no Edit button", async ({ signedIn: page }) => {
+	await page.goto("/e/olivers-picnic");
+	await expect(page.getByText("Oliver's picnic", { exact: true })).toBeVisible();
+	// Wait until the signed-in user has loaded; before that no one sees the button.
+	await expect(page.locator("svg.lucide-user-round-check")).toBeVisible();
 	await expect(page.getByRole("button", { name: "Edit" })).toHaveCount(0);
 });

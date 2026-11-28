@@ -71,7 +71,19 @@ test("closing the share prompt removes fromCreate so a reload does not reopen it
 	// Replace, not push: going back must not land on the ?fromCreate=true entry.
 	await page.goBack();
 	await expect(page).not.toHaveURL(/fromCreate/);
+});
 
+// A fixed mock event survives a reload, unlike one made in the test, so a real reload is possible.
+test("reloading after closing the share prompt does not reopen it", async ({ signedIn: page }) => {
+	await page.goto("/e/game-night?fromCreate=true");
+	const dialog = page.getByRole("dialog", { name: "Share this event with your friends" });
+	await expect(dialog).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(page).toHaveURL(/\/e\/game-night$/);
+
+	await page.reload();
+	await expect(page.getByText("Game Night", { exact: true })).toBeVisible();
+	await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
 test("visiting an event without fromCreate never shows the share prompt", async ({ page }) => {
