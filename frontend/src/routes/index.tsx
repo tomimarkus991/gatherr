@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -38,6 +38,11 @@ function App() {
 					</Button>
 				</div>
 			</div>
+			<footer className="text-center pb-8">
+				<Link to="/privacy" className="text-info text-sm underline">
+					{m.footer_privacy()}
+				</Link>
+			</footer>
 		</main>
 	);
 }

@@ -65,5 +65,6 @@
   "create_event_calendar_date_disabled": "You cannot select a date in the past",
   "copy_link_copied": "Link copied!",
   "google_sign_in_failed": "Google sign-in failed",
-  "share_link": "Share link"
+  "share_link": "Share link",
+  "footer_privacy": "Privacy policy"
 }

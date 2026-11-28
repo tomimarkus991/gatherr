@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/correctness/useExhaustiveDependencies: <useEffect> */
 /** biome-ignore-all lint/style/noNonNullAssertion: <explanation> */
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { GoogleIcon } from "../../components/icons/GoogleIcon";
@@ -85,6 +85,9 @@ function RouteComponent() {
 					</div>
 					<p className="text-info text-center">{m.create_google_calendar_hint_1()}</p>
 					<p className="text-info text-center -mt-1">{m.create_google_calendar_hint_2()}</p>
+					<Link to="/privacy" className="text-info text-sm underline mt-4">
+						{m.footer_privacy()}
+					</Link>
 				</div>
 			)}
 
