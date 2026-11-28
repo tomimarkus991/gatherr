@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { format, isBefore, setMinutes, startOfDay, subDays } from "date-fns";
 import { User } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ScrollFadeIn } from "../components/animations/ScrollFadeIn";
 import { GoogleIcon } from "../components/icons/GoogleIcon";
 import { Accordion } from "../components/ui/accordion";
 import { Button } from "../components/ui/button";
@@ -187,17 +188,19 @@ function Create() {
 				<Navbar />
 			</div>
 			<h1 className="text-3xl font-viking text-center mb-6">{name}</h1>
-			<ChooseEventTypeSlider
-				selected={calendarSelectedDates}
-				setSelected={setCalendarSelectedDates}
-				selectedDays={selectedDays}
-				setSelectedDays={setSelectedDays}
-				eventType={eventType}
-				setEventType={setEventType}
-			/>
+			<ScrollFadeIn from="left">
+				<ChooseEventTypeSlider
+					selected={calendarSelectedDates}
+					setSelected={setCalendarSelectedDates}
+					selectedDays={selectedDays}
+					setSelectedDays={setSelectedDays}
+					eventType={eventType}
+					setEventType={setEventType}
+				/>
+			</ScrollFadeIn>
 			<div>
 				{hasTimes && (
-					<>
+					<ScrollFadeIn from="right">
 						<ComponentExplainer
 							title={m.create_pick_time_range_title()}
 							text={m.create_pick_time_range_text()}
@@ -208,11 +211,11 @@ function Create() {
 							setStartTime={setStartTime}
 							setEndTime={setEndTime}
 						/>
-					</>
+					</ScrollFadeIn>
 				)}
 			</div>
 
-			<div className="mt-16">
+			<ScrollFadeIn from="left" className="mt-16">
 				<Accordion
 					key="Advanced"
 					title={m.create_advanced()}
@@ -275,8 +278,8 @@ function Create() {
 						</div>
 					}
 				/>
-			</div>
-			<div className="flex justify-center mt-16 mb-12">
+			</ScrollFadeIn>
+			<ScrollFadeIn from="bottom" className="flex justify-center mt-16 mb-12">
 				<Button
 					disabled={
 						!name.trim() ||
@@ -305,7 +308,7 @@ function Create() {
 				>
 					{m.create_event_button()}
 				</Button>
-			</div>
+			</ScrollFadeIn>
 
 			<Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
 				<DialogContent className="max-w-sm" showCloseButton={true}>

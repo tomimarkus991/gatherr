@@ -3,6 +3,7 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { MotionConfig } from "motion/react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
@@ -125,7 +126,8 @@ function RootDocument({ children }: { children: ReactNode }) {
 			<body className="font-main bg-surface text-content touch-manipulation">
 				<TanStackQueryProvider>
 					<GoogleOAuthProvider clientId={env.VITE_GOOGLE_CLIENT_ID ?? ""}>
-						{mswReady ? children : null}
+						{/* Under prefers-reduced-motion, entrances fade without sliding. */}
+						<MotionConfig reducedMotion="user">{mswReady ? children : null}</MotionConfig>
 					</GoogleOAuthProvider>
 					<TanStackDevtools
 						config={{ position: "bottom-right" }}

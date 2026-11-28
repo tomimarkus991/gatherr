@@ -25,6 +25,14 @@
 	--background-image-gradient: linear-gradient(60deg, #f26716, #a62f03);
 }
 
+/* Palette roles ShaderCanvas reads (design-library), mapped onto the existing palette. */
+:root {
+	--color-base: var(--color-surface);
+	--color-primary-soft: var(--color-primary);
+	--color-secondary-soft: var(--color-secondary);
+	--color-highlight: var(--color-primary);
+}
+
 @layer components {
 	.text-gradient {
 		@apply bg-clip-text text-transparent inline-block;
@@ -40,6 +48,8 @@ body {
 	-moz-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
+	/* Content that slides in from the side must never widen the page (design-library motion rules). */
+	overflow-x: clip;
 }
 
 /* Chrome, Safari, Edge, Opera */

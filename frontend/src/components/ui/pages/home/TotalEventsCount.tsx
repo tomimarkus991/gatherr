@@ -37,8 +37,8 @@ export const TotalEventsCount = ({ className, variant = "line" }: Props) => {
 					"bg-canvas rounded-xl flex flex-col items-center px-6 py-10 mx-4 mb-8 text-center"
 				}
 			>
-				<p className="text-gradient font-number font-bold text-5xl tabular-nums">
-					<LetterDecryptor time={900} onView glyphs="0123456789">
+				<p className="font-number font-bold text-5xl tabular-nums">
+					<LetterDecryptor time={900} onView glyphs="0123456789" className="text-gradient">
 						{formatCount(total, getLocale())}
 					</LetterDecryptor>
 				</p>
