@@ -285,3 +285,48 @@ export const EVENT_USERS: EventUser[] = [
 for (const event of EVENTS) {
 	event.respondedCount = EVENT_USERS.filter(eu => eu.event.id === event.id).length;
 }
+
+// ─── Google Calendar import ──────────────────────────────────────────────────
+
+/** The calendars GET /users/me/calendars lists, with the hours each one is busy every day. */
+export const CALENDARS = [
+	{ id: "primary", summary: "Personal", busyHours: [13] },
+	{ id: "work", summary: "Work", busyHours: [10, 17] },
+	{ id: "family", summary: "Family", busyHours: [21] },
+];
+
+/**
+ * Busy slots for the chosen calendars: every timed slot whose hour one of them is busy, so the
+ * result is the same on every call. None of the hours is 19, so `game-night` keeps its Wed 13 May
+ * 19:00 peak. Events without times get no busy slots.
+ */
+export function busySlotsFor(event: Event, calendarIds: string[]): string[] {
+	const busyHours = new Set(
+		CALENDARS.filter(cal => calendarIds.includes(cal.id)).flatMap(cal => cal.busyHours),
+	);
+	return event.times.filter(slot => {
+		const [time, day] = slot.split("-");
+		return day !== undefined && busyHours.has(Number.parseInt(time.slice(0, 2), 10));
+	});
+}
+
+// Connecting Google Calendar is a full-page round trip, which resets the mock data, so the
+// connected flag lives in sessionStorage.
+const CALENDAR_CONNECTED_KEY = "mockCalendarConnected";
+
+export function isCalendarConnected(): boolean {
+	try {
+		return sessionStorage.getItem(CALENDAR_CONNECTED_KEY) === "true";
+	} catch {
+		return false;
+	}
+}
+
+export function setCalendarConnected(connected: boolean) {
+	try {
+		if (connected) sessionStorage.setItem(CALENDAR_CONNECTED_KEY, "true");
+		else sessionStorage.removeItem(CALENDAR_CONNECTED_KEY);
+	} catch {
+		// Storage blocked: the mock stays disconnected.
+	}
+}

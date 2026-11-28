@@ -30,6 +30,10 @@ export interface Event {
 	timezone: string;
 	isDeleted: boolean;
 	respondedCount: number;
+	/** Set by POST /events/:shortId/confirm, ISO 8601 */
+	confirmedAt?: string;
+	confirmedStart?: string;
+	confirmedEnd?: string;
 	createdAt: string; // ISO 8601
 	updatedAt: string; // ISO 8601
 }
