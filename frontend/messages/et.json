@@ -65,5 +65,6 @@
     "create_event_calendar_date_disabled": "Sa ei saa valida minevikus olevat kuupäeva",
     "copy_link_copied": "Link kopeeritud!",
     "google_sign_in_failed": "Google sisselogimine ebaõnnestus",
-    "share_link": "Jaga linki"
+    "share_link": "Jaga linki",
+    "footer_privacy": "Privaatsuspoliitika"
 }
